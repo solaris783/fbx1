@@ -39,10 +39,22 @@ void WriteData::SetFilename(string input_filename)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
-// Helper function to push a new vertex into the vertex stl::vector structure
+// Helper function to push a new vertex coordinate into the vertex stl::vector structure
 ///////////////////////////////////////////////////////////////////////////////////////////
 void WriteData::RecordVertCoord(Vec3 *pVert)
 {
 	assert(pVert != NULL);
 	m_fileData.meshData.vPos.push_back(*pVert);
+}
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// Helper function to push a new vertex color into the vertex stl::vector structure
+///////////////////////////////////////////////////////////////////////////////////////////
+void WriteData::RecordVertColor(ColorRGBA *pRgba)
+{
+	assert(pRgba != NULL);
+	m_fileData.meshData.vColor.push_back(*pRgba);
 }

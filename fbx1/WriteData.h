@@ -34,7 +34,11 @@ class WriteData
 	public:
 		WriteData();
 		void SetFilename(string input_filename);
+
+		///////////////////////////////////////////////
+		// Functions for recording vertex components
 		void RecordVertCoord(Vec3 *pVert);
+		void RecordVertColor(ColorRGBA *pRgba);
 
 	private:
 		FileData m_fileData;

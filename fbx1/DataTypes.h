@@ -48,7 +48,7 @@ struct Vec4
 	float w;
 };
 
-struct Color
+struct ColorRGBA
 {
 	float r;
 	float g;
@@ -74,7 +74,7 @@ struct MeshData
 	vector<Vec3> vPos;
 	vector<Vec3> vNorm;
 	vector<TexCoord> vTex;
-	vector<Color> vColor;
+	vector<ColorRGBA> vColor;
 	vector<Vec3> vBinorm;
 	vector<Vec3> vTang;
 

@@ -32,7 +32,10 @@ class ProcessMesh
 		WriteData *m_pWriteData;
 		void ProcessPolygonInfo(FbxMesh* pMesh); // go through all polygon data and record it into the m_pWriteData structure
 
-		void RecordVertexCoord(FbxVector4 pValue); // record new vertex coordinate
+		///////////////////////////////////////////////////////////////////////////////////////////////
+		// Functions for recording component values into our data structure (of class MeshData)
+		void RecordVertexCoord(FbxVector4 pValue);
+		void RecordVertexColor(FbxColor pValue);
 };
 
 

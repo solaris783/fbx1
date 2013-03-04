@@ -25,6 +25,15 @@
 
 
 
+
+////////////////////////////////////////////////////////////////////////////////////////
+// GLOBALS
+////////////////////////////////////////////////////////////////////////////////////////
+ColorRGBA g_defaultColorIfNoneFound = {0.5f, 0.5f, 0.5f, 1.0f};		// for verts
+
+
+
+
 ///////////////////////////////////////////////////////////////////////////////////////
 // Go through the root node extracting all pertinent info
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -136,6 +145,7 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 			///////////////////////////////////
 			// VERTEX COLORS
 			///////////////////////////////////
+			bool storedColor = false;
 			for (l = 0; l < pMesh->GetElementVertexColorCount(); l++)
 			{
 				FbxGeometryElementVertexColor* leVtxc = pMesh->GetElementVertexColor( l);
@@ -152,6 +162,10 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 							{
 								if(G_bVerbose)
 									DisplayColor(header, leVtxc->GetDirectArray().GetAt(lControlPointIndex));
+								
+								RecordVertexColor(leVtxc->GetDirectArray().GetAt(lControlPointIndex));
+								storedColor = true;
+
 								break;
 							}
 
@@ -160,6 +174,10 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 								int id = leVtxc->GetIndexArray().GetAt(lControlPointIndex);
 								if(G_bVerbose)
 									DisplayColor(header, leVtxc->GetDirectArray().GetAt(id));
+
+								RecordVertexColor(leVtxc->GetDirectArray().GetAt(id));
+								storedColor = true;
+
 								break;
 							}
 
@@ -177,6 +195,10 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 							{
 								if(G_bVerbose)
 									DisplayColor(header, leVtxc->GetDirectArray().GetAt(vertexId));
+								
+								RecordVertexColor(leVtxc->GetDirectArray().GetAt(vertexId));
+								storedColor = true;
+
 								break;
 							}
 
@@ -185,6 +207,10 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 								int id = leVtxc->GetIndexArray().GetAt(vertexId);
 								if(G_bVerbose)
 									DisplayColor(header, leVtxc->GetDirectArray().GetAt(id));
+
+								RecordVertexColor(leVtxc->GetDirectArray().GetAt(id));
+								storedColor = true;
+
 								break;
 							}
 
@@ -205,6 +231,12 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 				} // end of switch (GetWrappingMode)
 
 			} // end of for(vertexColorCount)
+
+			// if no color found, store a default
+			if(!storedColor)
+			{
+				RecordVertexColor(&g_defaultColorIfNoneFound);
+			}
 
 			
 			///////////////////////////////////
@@ -422,4 +454,22 @@ void ProcessMesh::RecordVertexCoord(FbxVector4 pValue)
 	vertCoord.z = IN_CutPrecision( (float) pValue[2] );
 
 	m_pWriteData->RecordVertCoord(&vertCoord);
+}
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+// Record a vertex color
+///////////////////////////////////////////////////////////////////////////////////////
+void ProcessMesh::RecordVertexColor(FbxColor pValue)
+{
+	ColorRGBA color;
+
+	color.r = IN_CutPrecision( (float) pValue.mRed );
+	color.g = IN_CutPrecision( (float) pValue.mGreen );
+	color.b = IN_CutPrecision( (float) pValue.mBlue );
+	color.a = IN_CutPrecision( (float) pValue.mAlpha );
+
+	m_pWriteData->RecordVertColor(&color);
 }
