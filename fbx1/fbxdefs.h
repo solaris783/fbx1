@@ -1,0 +1,50 @@
+//
+// Parse through all the types of nodes in the file: Meshes, Materials, Bones, etc
+//
+
+
+#ifndef __FBXDEFS__H
+#define __FBXDEFS__H
+
+
+//////////////////////////////////////////
+// HEADER DEPENDENCIES
+//////////////////////////////////////////
+#include "common.h"	// Basic FBX init stuff and includes
+#include <string>	// std library
+
+
+
+//////////////////////////////////////////
+// DEFINES
+//////////////////////////////////////////
+#define MAX_FILE_COUNT	128
+
+
+
+/////////////////////////////////////////////////
+// STRUCTS
+/////////////////////////////////////////////////
+struct FbxLib
+{
+    FbxManager* lSdkManager;
+    FbxScene* lScene;
+};
+
+
+
+struct FbxLibAndFilename
+{
+	FbxLib *pFbxLib;
+	std::string fileName;
+};
+
+
+//////////////////////////////////////////
+// GLOBALS
+//////////////////////////////////////////
+extern bool G_bVerbose;
+
+
+
+#endif
