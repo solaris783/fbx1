@@ -16,6 +16,14 @@ using namespace std;	// to avoid having to write std:: every time I want to use 
 
 struct TexCoord
 {
+	TexCoord() {}
+	TexCoord(const TexCoord &uv) : u(uv.u), v(uv.v) {}
+	TexCoord(float u, float v) : u(u), v(v) {}
+
+	const TexCoord & operator =(const TexCoord & uv) { u = uv.u; v = uv.v; return *this; }
+	bool operator ==(const TexCoord & uv) const { return u == uv.u && v == uv.v; }
+	bool operator !=(const TexCoord & uv) const { return u != uv.u || v != uv.v; }
+
 	float u;
 	float v;
 };

@@ -30,6 +30,9 @@
 // GLOBALS
 ////////////////////////////////////////////////////////////////////////////////////////
 ColorRGBA g_defaultColorIfNoneFound = {0.5f, 0.5f, 0.5f, 1.0f};		// for verts
+FbxColor g_defaultColorFbx(g_defaultColorIfNoneFound.r, g_defaultColorIfNoneFound.g, g_defaultColorIfNoneFound.b, g_defaultColorIfNoneFound.a);
+FbxVector2 g_defaultFbxUV_ifNoneFound(0.0f, 0.0f);
+FbxVector4 g_defaultNormalIfNoneFound(0.0, 1.0f, 0.0, 0.0);
 
 
 
@@ -235,13 +238,15 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 			// if no color found, store a default
 			if(!storedColor)
 			{
-				RecordVertexColor(&g_defaultColorIfNoneFound);
+				RecordVertexColor(g_defaultColorFbx);
 			}
 
 			
 			///////////////////////////////////
 			// VERTEX UV's
 			///////////////////////////////////
+			bool storedUV = false;
+
 			for (l = 0; l < pMesh->GetElementUVCount(); ++l)
 			{
 				FbxGeometryElementUV* leUV = pMesh->GetElementUV( l);
@@ -258,6 +263,10 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 							{
 								if(G_bVerbose)
 									Display2DVector(header, leUV->GetDirectArray().GetAt(lControlPointIndex));
+
+								RecordVertexTexCoord(leUV->GetDirectArray().GetAt(lControlPointIndex));
+								storedUV = true;
+
 								break;
 							}
 
@@ -266,6 +275,10 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 								int id = leUV->GetIndexArray().GetAt(lControlPointIndex);
 								if(G_bVerbose)
 									Display2DVector(header, leUV->GetDirectArray().GetAt(id));
+
+								RecordVertexTexCoord(leUV->GetDirectArray().GetAt(id));
+								storedUV = true;
+
 								break;
 							}
 
@@ -287,6 +300,10 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 							{
 								if(G_bVerbose)
 									Display2DVector(header, leUV->GetDirectArray().GetAt(lTextureUVIndex));
+
+								RecordVertexTexCoord(leUV->GetDirectArray().GetAt(lTextureUVIndex));
+								storedUV = true;
+
 								break;
 							}
 
@@ -308,10 +325,18 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 
 			} // end of for(...GetElementUVCount...)
 
+			if(!storedUV)
+			{
+				RecordVertexTexCoord(g_defaultFbxUV_ifNoneFound);
+			}
+
+
 
 			///////////////////////////////////
 			// VERTEX NORMALS
 			///////////////////////////////////
+			bool foundNormal = false;
+
 			for( l = 0; l < pMesh->GetElementNormalCount(); ++l)
 			{
 				FbxGeometryElementNormal* leNormal = pMesh->GetElementNormal( l);
@@ -326,6 +351,10 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 						{
 							if(G_bVerbose)
 								Display3DVector(header, leNormal->GetDirectArray().GetAt(vertexId));
+
+							RecordVertexNormal(leNormal->GetDirectArray().GetAt(vertexId));
+							foundNormal = true;
+
 							break;
 						}
 
@@ -334,6 +363,10 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 							int id = leNormal->GetIndexArray().GetAt(vertexId);
 							if(G_bVerbose)
 								Display3DVector(header, leNormal->GetDirectArray().GetAt(id));
+
+							RecordVertexNormal(leNormal->GetDirectArray().GetAt(id));
+							foundNormal = true;
+
 							break;
 						}
 
@@ -345,6 +378,11 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 				} // end of if(...
 
 			}// end of for(...GetElementNormalCount...)
+
+			if(!foundNormal)
+			{
+				RecordVertexNormal(g_defaultNormalIfNoneFound);
+			}
 
 
 			///////////////////////////////////
@@ -472,4 +510,41 @@ void ProcessMesh::RecordVertexColor(FbxColor pValue)
 	color.a = IN_CutPrecision( (float) pValue.mAlpha );
 
 	m_pWriteData->RecordVertColor(&color);
+}
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+// Record a vertex color
+///////////////////////////////////////////////////////////////////////////////////////
+void ProcessMesh::RecordVertexTexCoord(FbxVector2 pValue)
+{
+	TexCoord texC;
+
+	texC.u = IN_CutPrecision( (float) pValue[0] );
+	texC.v = IN_CutPrecision( (float) pValue[1] );
+
+	m_pWriteData->RecordVertTexCoord(&texC);
+}
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+// Record a vertex normal
+///////////////////////////////////////////////////////////////////////////////////////
+void ProcessMesh::RecordVertexNormal(FbxVector4 pValue)
+{
+	Vec3 vertNorm;
+
+	// All values rounded to 1/10th of a millimeter (enough accuracy I believe - at the time of writing this comment)
+	// This will help with vertex welding later on (merging vertex positions that are 'close enough' to be considered the same)
+
+	vertNorm.x = IN_CutPrecision( (float) pValue[0] );
+	vertNorm.y = IN_CutPrecision( (float) pValue[1] );
+	vertNorm.z = IN_CutPrecision( (float) pValue[2] );
+
+	m_pWriteData->RecordVertNormal(&vertNorm);
 }

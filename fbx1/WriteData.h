@@ -39,6 +39,8 @@ class WriteData
 		// Functions for recording vertex components
 		void RecordVertCoord(Vec3 *pVert);
 		void RecordVertColor(ColorRGBA *pRgba);
+		void RecordVertTexCoord(TexCoord *pTexCoord);
+		void RecordVertNormal(Vec3 *pNorm);
 
 	private:
 		FileData m_fileData;

@@ -149,6 +149,13 @@ size_t weld( std::vector<T> & p, std::vector<size_t> & xrefs, HashFunction hash,
 
 // example code
 #if 0
+
+float rand_FloatRange(float a, float b)
+{
+	return ((b-a)*((float)rand()/RAND_MAX))+a;
+}
+
+main(...
 {
 	TimerPerformanceCounter mytimer;
 	TimerPerformanceCounter mytimer2;

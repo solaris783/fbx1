@@ -36,6 +36,8 @@ class ProcessMesh
 		// Functions for recording component values into our data structure (of class MeshData)
 		void RecordVertexCoord(FbxVector4 pValue);
 		void RecordVertexColor(FbxColor pValue);
+		void RecordVertexTexCoord(FbxVector2 pValue);
+		void RecordVertexNormal(FbxVector4 pValue);
 };
 
 
