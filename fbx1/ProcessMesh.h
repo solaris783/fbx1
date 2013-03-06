@@ -38,6 +38,11 @@ class ProcessMesh
 		void RecordVertexColor(FbxColor pValue);
 		void RecordVertexTexCoord(FbxVector2 pValue);
 		void RecordVertexNormal(FbxVector4 pValue);
+		void RecordVertexTangent(FbxVector4 pValue);
+		void RecordVertexBinormal(FbxVector4 pValue);
+
+		//
+		inline WriteData *GetDataPtr() { return m_pWriteData; }
 };
 
 

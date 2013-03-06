@@ -82,3 +82,27 @@ void WriteData::RecordVertNormal(Vec3 *pNorm)
 	assert(pNorm != NULL);
 	m_fileData.meshData.vNorm.push_back(*pNorm);
 }
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// Helper function to push a new vertex tangent into the tangent stl::vector structure
+///////////////////////////////////////////////////////////////////////////////////////////
+void WriteData::RecordVertTangent(Vec3 *pTang)
+{
+	assert(pTang != NULL);
+	m_fileData.meshData.vTang.push_back(*pTang);
+}
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// Helper function to push a new vertex binormal into the binormal stl::vector structure
+///////////////////////////////////////////////////////////////////////////////////////////
+void WriteData::RecordVertBinormal(Vec3 *pBinorm)
+{
+	assert(pBinorm != NULL);
+	m_fileData.meshData.vBinorm.push_back(*pBinorm);
+}

@@ -43,6 +43,10 @@ void ProcessContent::Start(FbxScene* pScene)
             RecurThroughChildren(lNode->GetChild(i));
         }
     }
+
+	// TODO: Weld all components that can be matched and fix indices into triangle list
+	int a;
+	a = 1;
 }
 
 

@@ -29,10 +29,28 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 // GLOBALS
 ////////////////////////////////////////////////////////////////////////////////////////
-ColorRGBA g_defaultColorIfNoneFound = {0.5f, 0.5f, 0.5f, 1.0f};		// for verts
-FbxColor g_defaultColorFbx(g_defaultColorIfNoneFound.r, g_defaultColorIfNoneFound.g, g_defaultColorIfNoneFound.b, g_defaultColorIfNoneFound.a);
-FbxVector2 g_defaultFbxUV_ifNoneFound(0.0f, 0.0f);
-FbxVector4 g_defaultNormalIfNoneFound(0.0, 1.0f, 0.0, 0.0);
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+// MACROS
+////////////////////////////////////////////////////////////////////////////////////////
+#define COMPONENT_NOT_FOUND_IDX		-1
+
+// Macros for recording vertex component raw data, and updating indices.
+// made into macros as to not obfuscate member functions with pointers or references to arbitrary data, abstracting simple operations making it difficult to follow
+#define RECORD_VERTEX_COORD(arg) { RecordVertexCoord(arg); pos.idxs[j] = posIdx; posIdx++; }
+#define RECORD_VERTEX_COLOR(arg) { RecordVertexColor(arg); col.idxs[j] = colIdx; colIdx++; }
+#define RECORD_VERTEX_TEX_COORD(arg) { RecordVertexTexCoord(arg); uvs.idxs[j] = uvsIdx; uvsIdx++; }
+#define RECORD_VERTEX_NORM(arg) { RecordVertexNormal(arg); nrm.idxs[j] = nrmIdx; nrmIdx++; }
+#define RECORD_VERTEX_TANG(arg) { RecordVertexTangent(arg); tan.idxs[j] = tanIdx; tanIdx++; }
+#define RECORD_VERTEX_BINORM(arg) { RecordVertexBinormal(arg); bin.idxs[j] = binIdx; binIdx++; }
+
+
 
 
 
@@ -64,12 +82,35 @@ void ProcessMesh::Start(FbxNode* pNode, WriteData *pWrData)
 ///////////////////////////////////////////////////////////////////////////////////////
 void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 {
+	bool nonTriangleFound = false;
+
+
+
+
 	//////////////////////////////////////////////////
 	// IMPORTANT: Keep track of component indices
+	// We have a running list of all raw data added for entire file (not just this mesh)
 	// These indices correspond in the order into the MeshData structure
 	// *** NOTE: at this point all component indices will match: vPos[0] refers to the same vertex as vNorm[0], vTex[0], etc.  This will change later in the process
+	int posIdx = GetDataPtr()->GetCurrVertCoordIndex();
+	int colIdx = GetDataPtr()->GetCurrVertColorIndex();
+	int uvsIdx = GetDataPtr()->GetCurrVertTexCoordIndex();
+	int nrmIdx = GetDataPtr()->GetCurrVertNormIndex();
+	int binIdx = GetDataPtr()->GetCurrVertBinormIndex();
+	int tanIdx = GetDataPtr()->GetCurrVertTangIndex();
+
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// list of component indices for the triangle lists (one for each component: coord, color, uv, etc)
+	Int3 pos, col, uvs, nrm, bin, tan;
+
+
+
+
+	/////////////////////////////////////
+	// Fbx vertex index for current mesh
     int vertexId = 0;
-	int polyIdx = 0;
 
 	//////////////////////////
 	// Iteration vars
@@ -131,6 +172,19 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 		///////////////////////////////////////////
 
         int lPolygonSize = pMesh->GetPolygonSize(i);
+		if(lPolygonSize != 3)
+		{
+			if(!nonTriangleFound)
+			{
+				printf("***  WARNING: non-triangles in mesh %s.  ALL non-triangles are discarded\n", pMesh->GetName());
+				nonTriangleFound = true;
+			}
+
+			vertexId += lPolygonSize;
+
+			// DANGER: 'continue' can screw you up unless you handle any unhandled cases at the end of this loop
+			continue;
+		}
 
 		for (j = 0; j < lPolygonSize; j++)
 		{
@@ -139,7 +193,7 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 			///////////////////////////////////
 			// VERTEX COORDINATES
 			///////////////////////////////////
-			RecordVertexCoord(lControlPoints[lControlPointIndex]);			
+			RECORD_VERTEX_COORD(lControlPoints[lControlPointIndex]);
 
 			if(G_bVerbose)
 				Display3DVector("\t\t\t\tCoordinates: ", lControlPoints[lControlPointIndex]);
@@ -166,7 +220,7 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 								if(G_bVerbose)
 									DisplayColor(header, leVtxc->GetDirectArray().GetAt(lControlPointIndex));
 								
-								RecordVertexColor(leVtxc->GetDirectArray().GetAt(lControlPointIndex));
+								RECORD_VERTEX_COLOR(leVtxc->GetDirectArray().GetAt(lControlPointIndex));
 								storedColor = true;
 
 								break;
@@ -178,7 +232,7 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 								if(G_bVerbose)
 									DisplayColor(header, leVtxc->GetDirectArray().GetAt(id));
 
-								RecordVertexColor(leVtxc->GetDirectArray().GetAt(id));
+								RECORD_VERTEX_COLOR(leVtxc->GetDirectArray().GetAt(id));
 								storedColor = true;
 
 								break;
@@ -199,7 +253,7 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 								if(G_bVerbose)
 									DisplayColor(header, leVtxc->GetDirectArray().GetAt(vertexId));
 								
-								RecordVertexColor(leVtxc->GetDirectArray().GetAt(vertexId));
+								RECORD_VERTEX_COLOR(leVtxc->GetDirectArray().GetAt(vertexId));
 								storedColor = true;
 
 								break;
@@ -211,7 +265,7 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 								if(G_bVerbose)
 									DisplayColor(header, leVtxc->GetDirectArray().GetAt(id));
 
-								RecordVertexColor(leVtxc->GetDirectArray().GetAt(id));
+								RECORD_VERTEX_COLOR(leVtxc->GetDirectArray().GetAt(id));
 								storedColor = true;
 
 								break;
@@ -235,10 +289,10 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 
 			} // end of for(vertexColorCount)
 
-			// if no color found, store a default
+			// if no color found, store a "not found" value
 			if(!storedColor)
 			{
-				RecordVertexColor(g_defaultColorFbx);
+				col.idxs[j] = COMPONENT_NOT_FOUND_IDX;
 			}
 
 			
@@ -264,7 +318,7 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 								if(G_bVerbose)
 									Display2DVector(header, leUV->GetDirectArray().GetAt(lControlPointIndex));
 
-								RecordVertexTexCoord(leUV->GetDirectArray().GetAt(lControlPointIndex));
+								RECORD_VERTEX_TEX_COORD(leUV->GetDirectArray().GetAt(lControlPointIndex));
 								storedUV = true;
 
 								break;
@@ -276,7 +330,7 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 								if(G_bVerbose)
 									Display2DVector(header, leUV->GetDirectArray().GetAt(id));
 
-								RecordVertexTexCoord(leUV->GetDirectArray().GetAt(id));
+								RECORD_VERTEX_TEX_COORD(leUV->GetDirectArray().GetAt(id));
 								storedUV = true;
 
 								break;
@@ -301,7 +355,7 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 								if(G_bVerbose)
 									Display2DVector(header, leUV->GetDirectArray().GetAt(lTextureUVIndex));
 
-								RecordVertexTexCoord(leUV->GetDirectArray().GetAt(lTextureUVIndex));
+								RECORD_VERTEX_TEX_COORD(leUV->GetDirectArray().GetAt(lTextureUVIndex));
 								storedUV = true;
 
 								break;
@@ -327,7 +381,7 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 
 			if(!storedUV)
 			{
-				RecordVertexTexCoord(g_defaultFbxUV_ifNoneFound);
+				uvs.idxs[j] = COMPONENT_NOT_FOUND_IDX;
 			}
 
 
@@ -352,7 +406,7 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 							if(G_bVerbose)
 								Display3DVector(header, leNormal->GetDirectArray().GetAt(vertexId));
 
-							RecordVertexNormal(leNormal->GetDirectArray().GetAt(vertexId));
+							RECORD_VERTEX_NORM(leNormal->GetDirectArray().GetAt(vertexId));
 							foundNormal = true;
 
 							break;
@@ -364,7 +418,7 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 							if(G_bVerbose)
 								Display3DVector(header, leNormal->GetDirectArray().GetAt(id));
 
-							RecordVertexNormal(leNormal->GetDirectArray().GetAt(id));
+							RECORD_VERTEX_NORM(leNormal->GetDirectArray().GetAt(id));
 							foundNormal = true;
 
 							break;
@@ -381,13 +435,15 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 
 			if(!foundNormal)
 			{
-				RecordVertexNormal(g_defaultNormalIfNoneFound);
+				nrm.idxs[j] = COMPONENT_NOT_FOUND_IDX;
 			}
 
 
 			///////////////////////////////////
 			// VERTEX TANGENT VECTOR
 			///////////////////////////////////
+			bool foundTang = false;
+
 			for( l = 0; l < pMesh->GetElementTangentCount(); ++l)
 			{
 				FbxGeometryElementTangent* leTangent = pMesh->GetElementTangent( l);
@@ -402,6 +458,10 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 						{
 							if(G_bVerbose)
 								Display3DVector(header, leTangent->GetDirectArray().GetAt(vertexId));
+
+							RECORD_VERTEX_TANG(leTangent->GetDirectArray().GetAt(vertexId));
+							foundTang = true;
+
 							break;
 						}
 
@@ -410,6 +470,10 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 							int id = leTangent->GetIndexArray().GetAt(vertexId);
 							if(G_bVerbose)
 								Display3DVector(header, leTangent->GetDirectArray().GetAt(id));
+
+							RECORD_VERTEX_TANG(leTangent->GetDirectArray().GetAt(id));
+							foundTang = true;
+
 							break;
 						}
 
@@ -422,10 +486,17 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 
 			} // end of tangent vector for(...GetElementTangentCount...)
 
+			if(!foundTang)
+			{
+				tan.idxs[j] = COMPONENT_NOT_FOUND_IDX;
+			}
+
 
 			///////////////////////////////////
 			// VERTEX BINORMAL VECTOR
 			///////////////////////////////////
+			bool foundBinormal = false;
+
 			for( l = 0; l < pMesh->GetElementBinormalCount(); ++l)
 			{
 				FbxGeometryElementBinormal* leBinormal = pMesh->GetElementBinormal( l);
@@ -441,6 +512,10 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 						{
 							if(G_bVerbose)
 								Display3DVector(header, leBinormal->GetDirectArray().GetAt(vertexId));
+
+							RECORD_VERTEX_BINORM(leBinormal->GetDirectArray().GetAt(vertexId));
+							foundBinormal = true;
+
 							break;
 						}
 
@@ -449,6 +524,10 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 							int id = leBinormal->GetIndexArray().GetAt(vertexId);
 							if(G_bVerbose)
 								Display3DVector(header, leBinormal->GetDirectArray().GetAt(id));
+
+							RECORD_VERTEX_BINORM(leBinormal->GetDirectArray().GetAt(id));
+							foundBinormal = true;
+
 							break;
 						}
 
@@ -461,9 +540,23 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 
 			} // end of binormal loop: for(...GetElementBinormalCount...)
 
+			if(!foundBinormal)
+			{
+				bin.idxs[j] = COMPONENT_NOT_FOUND_IDX;
+			}
+
 			vertexId++;
 
 		} // for polygonSize
+
+		////////////////////////////////////////////////
+		// Add found indices
+		GetDataPtr()->AddCoordTriIdxs(&pos);
+		GetDataPtr()->AddColorTriIdxs(&col);
+		GetDataPtr()->AddTexCoordTriIdxs(&uvs);
+		GetDataPtr()->AddNormTriIdxs(&nrm);
+		GetDataPtr()->AddTangTriIdxs(&tan);
+		GetDataPtr()->AddBinormTriIdxs(&bin);
 
     } // for polygonCount
 
@@ -547,4 +640,46 @@ void ProcessMesh::RecordVertexNormal(FbxVector4 pValue)
 	vertNorm.z = IN_CutPrecision( (float) pValue[2] );
 
 	m_pWriteData->RecordVertNormal(&vertNorm);
+}
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+// Record a vertex tangent
+///////////////////////////////////////////////////////////////////////////////////////
+void ProcessMesh::RecordVertexTangent(FbxVector4 pValue)
+{
+	Vec3 vertTang;
+
+	// All values rounded to 1/10th of a millimeter (enough accuracy I believe - at the time of writing this comment)
+	// This will help with vertex welding later on (merging vertex positions that are 'close enough' to be considered the same)
+
+	vertTang.x = IN_CutPrecision( (float) pValue[0] );
+	vertTang.y = IN_CutPrecision( (float) pValue[1] );
+	vertTang.z = IN_CutPrecision( (float) pValue[2] );
+
+	m_pWriteData->RecordVertTangent(&vertTang);
+}
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+// Record a vertex binormal
+///////////////////////////////////////////////////////////////////////////////////////
+void ProcessMesh::RecordVertexBinormal(FbxVector4 pValue)
+{
+	Vec3 vertBiNorm;
+
+	// All values rounded to 1/10th of a millimeter (enough accuracy I believe - at the time of writing this comment)
+	// This will help with vertex welding later on (merging vertex positions that are 'close enough' to be considered the same)
+
+	vertBiNorm.x = IN_CutPrecision( (float) pValue[0] );
+	vertBiNorm.y = IN_CutPrecision( (float) pValue[1] );
+	vertBiNorm.z = IN_CutPrecision( (float) pValue[2] );
+
+	m_pWriteData->RecordVertBinormal(&vertBiNorm);
 }

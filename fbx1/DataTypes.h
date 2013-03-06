@@ -75,10 +75,23 @@ struct UsingFields
 	unsigned vtexCoord : 1;
 };
 
+// indices into the triangle components.  These correspond 1:1 so that iPos[0] corresponds to iNrm[0], iTex[0], etc.  Done this way for caching performance.
+// For example, iPos[0].idxs[0-2] where [0-2] represent the 3 indices into that component's list (i.e. vPos)
+struct TriList
+{
+	vector<Int3> iPos;
+	vector<Int3> iNrm;
+	vector<Int3> iTex;
+	vector<Int3> iCol;
+	vector<Int3> iBin;
+	vector<Int3> iTan;
+};
+
 struct MeshData
 {
 	string name;
 
+	// Raw values for all components.  Kept separate for better performance when we weld values later on.
 	vector<Vec3> vPos;
 	vector<Vec3> vNorm;
 	vector<TexCoord> vTex;
@@ -88,13 +101,7 @@ struct MeshData
 
 	UsingFields m_usingFields;
 
-	// indices into the triangles.  These correspond 1:1 so that iPos[0] corresponds to iNrm[0], iTex[0], etc.  Done this way for caching performance.
-	vector<Int3> iPos;
-	vector<Int3> iNrm;
-	vector<Int3> iTex;
-	vector<Int3> iCol;
-	vector<Int3> iBin;
-	vector<Int3> iTan;
+	TriList tris;
 };
 
 struct FileData
