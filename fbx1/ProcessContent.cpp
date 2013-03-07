@@ -12,6 +12,7 @@
 #include "ProcessMesh.h"
 #include "WriteData.h"
 #include "ProcessContent.h"
+#include "Weld.h"
 
 
 
@@ -44,7 +45,8 @@ void ProcessContent::Start(FbxScene* pScene)
         }
     }
 
-	// TODO: Weld all components that can be matched and fix indices into triangle list
+	// Weld all components that can be matched and fix indices into triangle list
+	m_writeData.WeldData();
 	int a;
 	a = 1;
 }

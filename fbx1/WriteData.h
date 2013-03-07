@@ -14,6 +14,10 @@
 #include <assert.h>
 
 
+//
+// Fbx library headers
+//
+#include "fbxdefs.h"
 
 
 //
@@ -34,15 +38,16 @@ class WriteData
 	public:
 		WriteData();
 		void SetFilename(string input_filename);
+		void WeldData(); // remove duplicates from data lists and fix indices
 
 		///////////////////////////////////////////////
 		// Functions for recording vertex components
-		void RecordVertCoord(Vec3 *pVert);
-		void RecordVertColor(ColorRGBA *pRgba);
-		void RecordVertTexCoord(TexCoord *pTexCoord);
-		void RecordVertNormal(Vec3 *pNorm);
-		void RecordVertTangent(Vec3 *pTang);
-		void RecordVertBinormal(Vec3 *pBinorm);
+		void RecordVertCoord(FbxVector4 pValue);
+		void RecordVertColor(FbxColor pValue);
+		void RecordVertTexCoord(FbxVector2 pValue);
+		void RecordVertNormal(FbxVector4 pValue);
+		void RecordVertTangent(FbxVector4 pValue);
+		void RecordVertBinormal(FbxVector4 pValue);
 
 		///////////////////////////////////////////////
 		// Functions for getting current component index

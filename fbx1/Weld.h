@@ -23,6 +23,15 @@
 
 
 
+
+//
+// Project headers
+//
+#include "WriteData.h"
+
+
+
+
 /*----------------------------------------------------------------------------
 	Functions:
 ----------------------------------------------------------------------------*/
@@ -87,7 +96,7 @@ inline size_t NextPowerOfTwo(size_t x)
  * This code is based on the ideas of Ville Miettinen and Pierre Terdiman.
  */
 template <class T, class HashFunction, class BinaryPredicate>
-size_t weld( std::vector<T> & p, std::vector<size_t> & xrefs, HashFunction hash, BinaryPredicate equal )
+size_t Weld( std::vector<T> & p, std::vector<size_t> & xrefs, HashFunction hash, BinaryPredicate equal )
 {
 	size_t const NIL = size_t(~0);							// linked list terminator symbol.
 	size_t const N = p.size();								// # of input vertices.
@@ -204,7 +213,7 @@ main(...
  * @endcode
  */
 template <class T>
-void reorder(std::vector<T> & array, const std::vector<size_t> & xrefs, const size_t num)
+void Reorder(std::vector<T> & array, const std::vector<size_t> & xrefs, const size_t num)
 {
 	std::vector<T> new_array;
 	new_array.resize(num);
@@ -216,7 +225,6 @@ void reorder(std::vector<T> & array, const std::vector<size_t> & xrefs, const si
 	// replace old array by the new one.
 	std::swap(array, new_array);
 }
-
 
 
 #endif // _WELD_H_

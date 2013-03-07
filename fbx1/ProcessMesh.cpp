@@ -11,10 +11,17 @@
 
 
 
+
+//
+// Fbx library headers
+//
+#include "fbxdefs.h"
+
+
+
 //
 // Project Includes
 //
-#include "fbxdefs.h"
 #include "DisplayCommon.h"
 #include "DataTypes.h"
 #include "ProcessMesh.h"
@@ -41,14 +48,17 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 #define COMPONENT_NOT_FOUND_IDX		-1
 
+
+
+
 // Macros for recording vertex component raw data, and updating indices.
 // made into macros as to not obfuscate member functions with pointers or references to arbitrary data, abstracting simple operations making it difficult to follow
-#define RECORD_VERTEX_COORD(arg) { RecordVertexCoord(arg); pos.idxs[j] = posIdx; posIdx++; }
-#define RECORD_VERTEX_COLOR(arg) { RecordVertexColor(arg); col.idxs[j] = colIdx; colIdx++; }
-#define RECORD_VERTEX_TEX_COORD(arg) { RecordVertexTexCoord(arg); uvs.idxs[j] = uvsIdx; uvsIdx++; }
-#define RECORD_VERTEX_NORM(arg) { RecordVertexNormal(arg); nrm.idxs[j] = nrmIdx; nrmIdx++; }
-#define RECORD_VERTEX_TANG(arg) { RecordVertexTangent(arg); tan.idxs[j] = tanIdx; tanIdx++; }
-#define RECORD_VERTEX_BINORM(arg) { RecordVertexBinormal(arg); bin.idxs[j] = binIdx; binIdx++; }
+#define RECORD_VERTEX_COORD(arg) { GetDataPtr()->RecordVertCoord(arg); pos.idxs[j] = posIdx; posIdx++; }
+#define RECORD_VERTEX_COLOR(arg) { GetDataPtr()->RecordVertColor(arg); col.idxs[j] = colIdx; colIdx++; }
+#define RECORD_VERTEX_TEX_COORD(arg) { GetDataPtr()->RecordVertTexCoord(arg); uvs.idxs[j] = uvsIdx; uvsIdx++; }
+#define RECORD_VERTEX_NORM(arg) { GetDataPtr()->RecordVertNormal(arg); nrm.idxs[j] = nrmIdx; nrmIdx++; }
+#define RECORD_VERTEX_TANG(arg) { GetDataPtr()->RecordVertTangent(arg); tan.idxs[j] = tanIdx; tanIdx++; }
+#define RECORD_VERTEX_BINORM(arg) { GetDataPtr()->RecordVertBinormal(arg); bin.idxs[j] = binIdx; binIdx++; }
 
 
 
@@ -560,126 +570,4 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 
     } // for polygonCount
 
-}
-
-
-
-
-
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-// Record a vertex coordinate
-///////////////////////////////////////////////////////////////////////////////////////
-void ProcessMesh::RecordVertexCoord(FbxVector4 pValue)
-{
-	Vec3 vertCoord;
-
-	// All values rounded to 1/10th of a millimeter (enough accuracy I believe - at the time of writing this comment)
-	// This will help with vertex welding later on (merging vertex positions that are 'close enough' to be considered the same)
-
-	vertCoord.x = IN_CutPrecision( (float) pValue[0] );
-	vertCoord.y = IN_CutPrecision( (float) pValue[1] );
-	vertCoord.z = IN_CutPrecision( (float) pValue[2] );
-
-	m_pWriteData->RecordVertCoord(&vertCoord);
-}
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-// Record a vertex color
-///////////////////////////////////////////////////////////////////////////////////////
-void ProcessMesh::RecordVertexColor(FbxColor pValue)
-{
-	ColorRGBA color;
-
-	color.r = IN_CutPrecision( (float) pValue.mRed );
-	color.g = IN_CutPrecision( (float) pValue.mGreen );
-	color.b = IN_CutPrecision( (float) pValue.mBlue );
-	color.a = IN_CutPrecision( (float) pValue.mAlpha );
-
-	m_pWriteData->RecordVertColor(&color);
-}
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-// Record a vertex color
-///////////////////////////////////////////////////////////////////////////////////////
-void ProcessMesh::RecordVertexTexCoord(FbxVector2 pValue)
-{
-	TexCoord texC;
-
-	texC.u = IN_CutPrecision( (float) pValue[0] );
-	texC.v = IN_CutPrecision( (float) pValue[1] );
-
-	m_pWriteData->RecordVertTexCoord(&texC);
-}
-
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-// Record a vertex normal
-///////////////////////////////////////////////////////////////////////////////////////
-void ProcessMesh::RecordVertexNormal(FbxVector4 pValue)
-{
-	Vec3 vertNorm;
-
-	// All values rounded to 1/10th of a millimeter (enough accuracy I believe - at the time of writing this comment)
-	// This will help with vertex welding later on (merging vertex positions that are 'close enough' to be considered the same)
-
-	vertNorm.x = IN_CutPrecision( (float) pValue[0] );
-	vertNorm.y = IN_CutPrecision( (float) pValue[1] );
-	vertNorm.z = IN_CutPrecision( (float) pValue[2] );
-
-	m_pWriteData->RecordVertNormal(&vertNorm);
-}
-
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-// Record a vertex tangent
-///////////////////////////////////////////////////////////////////////////////////////
-void ProcessMesh::RecordVertexTangent(FbxVector4 pValue)
-{
-	Vec3 vertTang;
-
-	// All values rounded to 1/10th of a millimeter (enough accuracy I believe - at the time of writing this comment)
-	// This will help with vertex welding later on (merging vertex positions that are 'close enough' to be considered the same)
-
-	vertTang.x = IN_CutPrecision( (float) pValue[0] );
-	vertTang.y = IN_CutPrecision( (float) pValue[1] );
-	vertTang.z = IN_CutPrecision( (float) pValue[2] );
-
-	m_pWriteData->RecordVertTangent(&vertTang);
-}
-
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-// Record a vertex binormal
-///////////////////////////////////////////////////////////////////////////////////////
-void ProcessMesh::RecordVertexBinormal(FbxVector4 pValue)
-{
-	Vec3 vertBiNorm;
-
-	// All values rounded to 1/10th of a millimeter (enough accuracy I believe - at the time of writing this comment)
-	// This will help with vertex welding later on (merging vertex positions that are 'close enough' to be considered the same)
-
-	vertBiNorm.x = IN_CutPrecision( (float) pValue[0] );
-	vertBiNorm.y = IN_CutPrecision( (float) pValue[1] );
-	vertBiNorm.z = IN_CutPrecision( (float) pValue[2] );
-
-	m_pWriteData->RecordVertBinormal(&vertBiNorm);
 }

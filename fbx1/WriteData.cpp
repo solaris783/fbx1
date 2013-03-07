@@ -12,6 +12,67 @@
 // project includes
 //
 #include "WriteData.h"
+#include "Weld.h"
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+// Hash definitions for data types used by the "WeldData" function
+///////////////////////////////////////////////////////////////////////////////////////
+namespace std
+{
+	template <> struct hash<Vec3>
+	{
+		size_t operator()(Vec3 v)
+		{
+			const unsigned int * h = (const unsigned int *)(&v);
+			unsigned int f = (h[0]+h[1]*11-(h[2]*17))&0x7fffffff;     // avoid problems with +-0
+			return (f>>22)^(f>>12)^(f);
+		}
+	};
+
+	template <> struct hash<TexCoord>
+	{
+		size_t operator()(TexCoord uv)
+		{
+			const unsigned int * h = (const unsigned int *)(&uv);
+			unsigned int f = (h[0]+h[1]*11)&0x7fffffff;     // avoid problems with +-0
+			return (f>>22)^(f>>12)^(f);
+		}
+	};
+
+	template <> struct hash<ColorRGBA>
+	{
+		size_t operator()(ColorRGBA v)
+		{
+			const unsigned int * h = (const unsigned int *)(&v);
+			unsigned int f = (h[0]+h[1]*11-(h[2]*17))&0x7fffffff;     // avoid problems with +-0
+			return (f>>22)^(f>>12)^(f);
+		}
+	};
+}
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+// Template for reordering index arrays
+////////////////////////////////////////////////////////////////////////////////////////
+void ReorderIndices(int originalArraySize, vector<Int3> *pIndexArray, const std::vector<size_t> & xrefs)
+{
+	for(int i=0; i < originalArraySize; i++)
+	{
+		for(int j=0; j < 3; j++)
+		{
+			(*pIndexArray)[i].idxs[j] =  xrefs[(*pIndexArray)[i].idxs[j]];
+		}
+	}
+
+}
+
+
 
 
 
@@ -41,10 +102,18 @@ void WriteData::SetFilename(string input_filename)
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Helper function to push a new vertex coordinate into the vertex stl::vector structure
 ///////////////////////////////////////////////////////////////////////////////////////////
-void WriteData::RecordVertCoord(Vec3 *pVert)
+void WriteData::RecordVertCoord(FbxVector4 pValue)
 {
-	assert(pVert != NULL);
-	m_fileData.meshData.vPos.push_back(*pVert);
+	Vec3 vertCoord;
+
+	// All values rounded to 1/10th of a millimeter (enough accuracy I believe - at the time of writing this comment)
+	// This will help with vertex welding later on (merging vertex positions that are 'close enough' to be considered the same)
+
+	vertCoord.x = IN_CutPrecision( (float) pValue[0] );
+	vertCoord.y = IN_CutPrecision( (float) pValue[1] );
+	vertCoord.z = IN_CutPrecision( (float) pValue[2] );
+
+	m_fileData.meshData.vPos.push_back(vertCoord);
 }
 
 
@@ -53,10 +122,16 @@ void WriteData::RecordVertCoord(Vec3 *pVert)
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Helper function to push a new vertex color into the color stl::vector structure
 ///////////////////////////////////////////////////////////////////////////////////////////
-void WriteData::RecordVertColor(ColorRGBA *pRgba)
+void WriteData::RecordVertColor(FbxColor pValue)
 {
-	assert(pRgba != NULL);
-	m_fileData.meshData.vColor.push_back(*pRgba);
+	ColorRGBA color;
+
+	color.r = IN_CutPrecision( (float) pValue.mRed );
+	color.g = IN_CutPrecision( (float) pValue.mGreen );
+	color.b = IN_CutPrecision( (float) pValue.mBlue );
+	color.a = IN_CutPrecision( (float) pValue.mAlpha );
+
+	m_fileData.meshData.vColor.push_back(color);
 }
 
 
@@ -65,10 +140,14 @@ void WriteData::RecordVertColor(ColorRGBA *pRgba)
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // Helper function to push a new vertex texture coordinate into the texCoord stl::vector structure
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-void WriteData::RecordVertTexCoord(TexCoord *pTexCoord)
+void WriteData::RecordVertTexCoord(FbxVector2 pValue)
 {
-	assert(pTexCoord != NULL);
-	m_fileData.meshData.vTex.push_back(*pTexCoord);
+	TexCoord texC;
+
+	texC.u = IN_CutPrecision( (float) pValue[0] );
+	texC.v = IN_CutPrecision( (float) pValue[1] );
+
+	m_fileData.meshData.vTex.push_back(texC);
 }
 
 
@@ -77,10 +156,18 @@ void WriteData::RecordVertTexCoord(TexCoord *pTexCoord)
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Helper function to push a new vertex normal into the normal stl::vector structure
 ///////////////////////////////////////////////////////////////////////////////////////////
-void WriteData::RecordVertNormal(Vec3 *pNorm)
+void WriteData::RecordVertNormal(FbxVector4 pValue)
 {
-	assert(pNorm != NULL);
-	m_fileData.meshData.vNorm.push_back(*pNorm);
+	Vec3 vertNorm;
+
+	// All values rounded to 1/10th of a millimeter (enough accuracy I believe - at the time of writing this comment)
+	// This will help with vertex welding later on (merging vertex positions that are 'close enough' to be considered the same)
+
+	vertNorm.x = IN_CutPrecision( (float) pValue[0] );
+	vertNorm.y = IN_CutPrecision( (float) pValue[1] );
+	vertNorm.z = IN_CutPrecision( (float) pValue[2] );
+
+	m_fileData.meshData.vNorm.push_back(vertNorm);
 }
 
 
@@ -89,10 +176,18 @@ void WriteData::RecordVertNormal(Vec3 *pNorm)
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Helper function to push a new vertex tangent into the tangent stl::vector structure
 ///////////////////////////////////////////////////////////////////////////////////////////
-void WriteData::RecordVertTangent(Vec3 *pTang)
+void WriteData::RecordVertTangent(FbxVector4 pValue)
 {
-	assert(pTang != NULL);
-	m_fileData.meshData.vTang.push_back(*pTang);
+	Vec3 vertTang;
+
+	// All values rounded to 1/10th of a millimeter (enough accuracy I believe - at the time of writing this comment)
+	// This will help with vertex welding later on (merging vertex positions that are 'close enough' to be considered the same)
+
+	vertTang.x = IN_CutPrecision( (float) pValue[0] );
+	vertTang.y = IN_CutPrecision( (float) pValue[1] );
+	vertTang.z = IN_CutPrecision( (float) pValue[2] );
+
+	m_fileData.meshData.vTang.push_back(vertTang);
 }
 
 
@@ -101,8 +196,42 @@ void WriteData::RecordVertTangent(Vec3 *pTang)
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Helper function to push a new vertex binormal into the binormal stl::vector structure
 ///////////////////////////////////////////////////////////////////////////////////////////
-void WriteData::RecordVertBinormal(Vec3 *pBinorm)
+void WriteData::RecordVertBinormal(FbxVector4 pValue)
 {
-	assert(pBinorm != NULL);
-	m_fileData.meshData.vBinorm.push_back(*pBinorm);
+	Vec3 vertBiNorm;
+
+	// All values rounded to 1/10th of a millimeter (enough accuracy I believe - at the time of writing this comment)
+	// This will help with vertex welding later on (merging vertex positions that are 'close enough' to be considered the same)
+
+	vertBiNorm.x = IN_CutPrecision( (float) pValue[0] );
+	vertBiNorm.y = IN_CutPrecision( (float) pValue[1] );
+	vertBiNorm.z = IN_CutPrecision( (float) pValue[2] );
+
+	m_fileData.meshData.vBinorm.push_back(vertBiNorm);
+}
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// WELD data pools
+// Remove duplicates from data lists and fix indices
+///////////////////////////////////////////////////////////////////////////////////////////
+void WriteData::WeldData()
+{
+	MeshData *pData = &m_fileData.meshData;
+	TriList *pIndices = &m_fileData.meshData.tris;
+
+	vector<size_t> xrefs;
+	int num = Weld( pData->vPos, xrefs, std::hash<Vec3>(), std::equal_to<Vec3>() );
+
+	int triCnt = pIndices->iPos.size();
+
+	ReorderIndices(triCnt, &pIndices->iPos, xrefs);
+	xrefs.clear();
+
+	int num = Weld( pData->vColor, xrefs, std::hash<Vec3>(), std::equal_to<Vec3>() );
+
+
 }

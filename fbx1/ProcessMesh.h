@@ -32,15 +32,6 @@ class ProcessMesh
 		WriteData *m_pWriteData;
 		void ProcessPolygonInfo(FbxMesh* pMesh); // go through all polygon data and record it into the m_pWriteData structure
 
-		///////////////////////////////////////////////////////////////////////////////////////////////
-		// Functions for recording component values into our data structure (of class MeshData)
-		void RecordVertexCoord(FbxVector4 pValue);
-		void RecordVertexColor(FbxColor pValue);
-		void RecordVertexTexCoord(FbxVector2 pValue);
-		void RecordVertexNormal(FbxVector4 pValue);
-		void RecordVertexTangent(FbxVector4 pValue);
-		void RecordVertexBinormal(FbxVector4 pValue);
-
 		//
 		inline WriteData *GetDataPtr() { return m_pWriteData; }
 };

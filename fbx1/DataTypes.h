@@ -58,6 +58,14 @@ struct Vec4
 
 struct ColorRGBA
 {
+	ColorRGBA() {}
+	ColorRGBA(const ColorRGBA & col) : r(col.r), g(col.g), b(col.b), a(col.a) {}
+	ColorRGBA(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {}
+
+	const ColorRGBA & operator =(const ColorRGBA & col) { r = col.r; g = col.g; b = col.b; a = col.a; return *this; }
+	bool operator ==(const ColorRGBA & col) const { return r == col.r && g == col.g && b == col.b && a == col.a; }
+	bool operator !=(const ColorRGBA & col) const { return r != col.r || g != col.g || b != col.b || a != col.a; }
+
 	float r;
 	float g;
 	float b;

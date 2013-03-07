@@ -40,28 +40,6 @@ FbxLibAndFilename G_fbxInfo[MAX_FILE_COUNT];
 int G_threadCnt;
 bool G_bVerbose = false;
 
-namespace std
-{
-	template <> struct hash<Vec3>
-	{
-		size_t operator()(Vec3 v)
-		{
-			const unsigned int * h = (const unsigned int *)(&v);
-			unsigned int f = (h[0]+h[1]*11-(h[2]*17))&0x7fffffff;     // avoid problems with +-0
-			return (f>>22)^(f>>12)^(f);
-		}
-	};
-
-	template <> struct hash<TexCoord>
-	{
-		size_t operator()(TexCoord uv)
-		{
-			const unsigned int * h = (const unsigned int *)(&uv);
-			unsigned int f = (h[0]+h[1]*11)&0x7fffffff;     // avoid problems with +-0
-			return (f>>22)^(f>>12)^(f);
-		}
-	};
-}
 
 
 
