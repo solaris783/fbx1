@@ -45,9 +45,17 @@ namespace std
 	{
 		size_t operator()(ColorRGBA v)
 		{
-			const unsigned int * h = (const unsigned int *)(&v);
-			unsigned int f = (h[0]+h[1]*11-(h[2]*17))&0x7fffffff;     // avoid problems with +-0
-			return (f>>22)^(f>>12)^(f);
+			size_t h = 5381;
+			unsigned char r = (unsigned char) min(255.0f, ((v.r * 0.5f) * 255.0f));
+			unsigned char g = (unsigned char) min(255.0f, ((v.g * 0.5f) * 255.0f));
+			unsigned char b = (unsigned char) min(255.0f, ((v.b * 0.5f) * 255.0f));
+			unsigned char a = (unsigned char) min(255.0f, ((v.a * 0.5f) * 255.0f));
+
+			h = ((h << 5) + h) ^ r;
+			h = ((h << 5) + h) ^ g;
+			h = ((h << 5) + h) ^ b;
+			h = ((h << 5) + h) ^ a;
+			return h;
 		}
 	};
 }
@@ -66,7 +74,8 @@ void ReorderIndices(int originalArraySize, vector<Int3> *pIndexArray, const std:
 	{
 		for(int j=0; j < 3; j++)
 		{
-			(*pIndexArray)[i].idxs[j] =  xrefs[(*pIndexArray)[i].idxs[j]];
+			if((*pIndexArray)[i].idxs[j] >= 0)
+				(*pIndexArray)[i].idxs[j] = xrefs[(*pIndexArray)[i].idxs[j]];
 		}
 	}
 
@@ -222,16 +231,85 @@ void WriteData::WeldData()
 {
 	MeshData *pData = &m_fileData.meshData;
 	TriList *pIndices = &m_fileData.meshData.tris;
-
+	int num = 0;
+	int compCnt = 0;
 	vector<size_t> xrefs;
-	int num = Weld( pData->vPos, xrefs, std::hash<Vec3>(), std::equal_to<Vec3>() );
 
-	int triCnt = pIndices->iPos.size();
+	// Remove POSITION duplicates
+	if(pData->vPos.size() > 0)
+	{
+		num = Weld( pData->vPos, xrefs, std::hash<Vec3>(), std::equal_to<Vec3>() );
+		compCnt = pIndices->iPos.size(); // number of items in this component
+		ReorderIndices(compCnt, &pIndices->iPos, xrefs);
+		xrefs.clear();
+	}
+	else
+	{
+		pIndices->iPos.clear();
+	}
 
-	ReorderIndices(triCnt, &pIndices->iPos, xrefs);
-	xrefs.clear();
+	// Remove COLOR duplicates
+	if(pData->vColor.size() > 0)
+	{
+		num = Weld( pData->vColor, xrefs, std::hash<ColorRGBA>(), std::equal_to<ColorRGBA>() );
+		compCnt = pIndices->iCol.size(); // number of items in this component
+		ReorderIndices(compCnt, &pIndices->iCol, xrefs);
+		xrefs.clear();
+	}
+	else
+	{
+		pIndices->iCol.clear();
+	}
 
-	int num = Weld( pData->vColor, xrefs, std::hash<Vec3>(), std::equal_to<Vec3>() );
+	// Remove TEXTURE COORDINATE duplicates
+	if(pData->vTex.size() > 0)
+	{
+		num = Weld( pData->vTex, xrefs, std::hash<TexCoord>(), std::equal_to<TexCoord>() );
+		compCnt = pIndices->iTex.size(); // number of items in this component
+		ReorderIndices(compCnt, &pIndices->iTex, xrefs);
+		xrefs.clear();
+	}
+	else
+	{
+		pIndices->iTex.clear();
+	}
 
+	// Remove NORMAL duplicates
+	if(pData->vNorm.size() > 0)
+	{
+		num = Weld( pData->vNorm, xrefs, std::hash<Vec3>(), std::equal_to<Vec3>() );
+		compCnt = pIndices->iNrm.size(); // number of items in this component
+		ReorderIndices(compCnt, &pIndices->iNrm, xrefs);
+		xrefs.clear();
+	}
+	else
+	{
+		pIndices->iNrm.clear();
+	}
 
+	// Remove TANGENT duplicates
+	if(pData->vTang.size() > 0)
+	{
+		num = Weld( pData->vTang, xrefs, std::hash<Vec3>(), std::equal_to<Vec3>() );
+		compCnt = pIndices->iTan.size(); // number of items in this component
+		ReorderIndices(compCnt, &pIndices->iTan, xrefs);
+		xrefs.clear();
+	}
+	else
+	{
+		pIndices->iTan.clear();
+	}
+
+	// Remove BINORMAL duplicates
+	if(pData->vBinorm.size() > 0)
+	{
+		num = Weld( pData->vBinorm, xrefs, std::hash<Vec3>(), std::equal_to<Vec3>() );
+		compCnt = pIndices->iBin.size(); // number of items in this component
+		ReorderIndices(compCnt, &pIndices->iBin, xrefs);
+		xrefs.clear();
+	}
+	else
+	{
+		pIndices->iBin.clear();
+	}
 }
