@@ -97,8 +97,6 @@ struct TriList
 
 struct MeshData
 {
-	string name;
-
 	// Raw values for all components.  Kept separate for better performance when we weld values later on.
 	vector<Vec3> vPos;
 	vector<Vec3> vNorm;
@@ -112,10 +110,108 @@ struct MeshData
 	TriList tris;
 };
 
+enum ShadingModel
+{
+	SHADING_MODEL_LAMBERT,
+	SHADING_MODEL_PHONG
+};
+
+enum TexAlphaSource
+{
+	TEX_ALPHA_SOURCE_NONE,
+	TEX_ALPHA_SOURCE_RGB_INTENSITY,
+	TEX_ALPHA_SOURCE_BLACK
+};
+
+
+enum TexMappingType
+{
+	TEXMAPPING_TYPE_NULL,
+	TEXMAPPING_TYPE_PLANAR,
+	TEXMAPPING_TYPE_SPHERICAL,
+	TEXMAPPING_TYPE_CYLINDRICAL,
+	TEXMAPPING_TYPE_BOX,
+	TEXMAPPING_TYPE_FACE,
+	TEXMAPPING_TYPE_UV,
+	TEXMAPPING_TYPE_ENVIRONMENT
+};
+
+
+enum TexPlanarMappingNormals
+{
+	TEX_PLANARMAPPING_NORMALS_X,
+	TEX_PLANARMAPPING_NORMALS_Y,
+	TEX_PLANARMAPPING_NORMALS_Z,
+};
+
+
+enum TexBlendModes
+{
+	TEX_BLENDMODES_TRANSLUCENT,
+	TEX_BLENDMODES_ADD,
+	TEX_BLENDMODES_MODULATE,
+	TEX_BLENDMODES_MODULATE2
+};
+
+
+enum TexUsedFor
+{
+	TEXUSE_STANDARD,
+	TEXUSE_SHADOWMAP,
+	TEXUSE_LIGHTMAP,
+	TEXUSE_SPHERICAL_REFLEXION_MAP,
+	TEXUSE_SPHERE_REFLEXION_MAP,
+	TEXUSE_BUMP_NORMAL_MAP
+};
+
+
+struct TextureData
+{
+	string name;
+	string filename; // full path
+
+	TexAlphaSource alphaSource;
+	TexMappingType mappingType;
+	TexPlanarMappingNormals planarNormals;
+	TexBlendModes blendMode;
+	TexUsedFor usedFor;
+
+	bool usesDefaultMaterial;
+	bool swapUV;
+	float scaleU;
+	float scaleV;
+	float translateU;
+	float translateV;
+	float rotateU;
+	float rotateV;
+	float rotateW;
+	float cropLeft;
+	float cropTop;
+	float cropRight;
+	float cropBottom;
+	float defaultAlpha;
+};
+
+struct MaterialData
+{
+	string name;
+	vector<int> textureIdx; // index of the texture(s) in the texture list that this material uses. A single material can have multiple textures associated with it.
+	ColorRGBA ambient;
+	ColorRGBA diffuse;
+	ColorRGBA specular;
+	ColorRGBA emissive;
+	float opacity; // transparency factor
+	float shininess;
+	float reflectivity;
+	ShadingModel shadingModel;
+};
+
 struct FileData
 {
 	string filename;
 	MeshData meshData;
+	vector<MaterialData> materials;
+	vector<TextureData> textures;
 };
 
 

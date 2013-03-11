@@ -19,8 +19,9 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // CONSTRUCTOR
+// This class has a member variables (for example, m_procMesh) with a compulsory initialization parameter (WriteData)
 ///////////////////////////////////////////////////////////////////////////////////////
-ProcessContent::ProcessContent(string in_filename)
+ProcessContent::ProcessContent(string in_filename) : m_procMesh(&m_writeData), m_procMat(&m_writeData)
 {
 	m_filename = in_filename;
 	m_writeData.SetFilename(m_filename);
@@ -47,8 +48,6 @@ void ProcessContent::Start(FbxScene* pScene)
 
 	// Weld all components that can be matched and fix indices into triangle list
 	m_writeData.WeldData();
-	int a;
-	a = 1;
 }
 
 
@@ -78,8 +77,8 @@ void ProcessContent::RecurThroughChildren(FbxNode* pNode)
 			//_________________________________________________________
 			case FbxNodeAttribute::eMesh:
 			{
-				m_procMesh.Start(pNode, &m_writeData);
-
+				m_procMesh.Start(pNode, &m_procMat);
+				
 				break;
 			}
 

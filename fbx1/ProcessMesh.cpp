@@ -53,12 +53,12 @@
 
 // Macros for recording vertex component raw data, and updating indices.
 // made into macros as to not obfuscate member functions with pointers or references to arbitrary data, abstracting simple operations making it difficult to follow
-#define RECORD_VERTEX_COORD(arg) { GetDataPtr()->RecordVertCoord(arg); pos.idxs[j] = posIdx; posIdx++; }
-#define RECORD_VERTEX_COLOR(arg) { GetDataPtr()->RecordVertColor(arg); col.idxs[j] = colIdx; colIdx++; }
-#define RECORD_VERTEX_TEX_COORD(arg) { GetDataPtr()->RecordVertTexCoord(arg); uvs.idxs[j] = uvsIdx; uvsIdx++; }
-#define RECORD_VERTEX_NORM(arg) { GetDataPtr()->RecordVertNormal(arg); nrm.idxs[j] = nrmIdx; nrmIdx++; }
-#define RECORD_VERTEX_TANG(arg) { GetDataPtr()->RecordVertTangent(arg); tan.idxs[j] = tanIdx; tanIdx++; }
-#define RECORD_VERTEX_BINORM(arg) { GetDataPtr()->RecordVertBinormal(arg); bin.idxs[j] = binIdx; binIdx++; }
+#define RECORD_VERTEX_COORD(arg) { GetWrtDataPtr()->RecordVertCoord(arg); pos.idxs[j] = posIdx; posIdx++; }
+#define RECORD_VERTEX_COLOR(arg) { GetWrtDataPtr()->RecordVertColor(arg); col.idxs[j] = colIdx; colIdx++; }
+#define RECORD_VERTEX_TEX_COORD(arg) { GetWrtDataPtr()->RecordVertTexCoord(arg); uvs.idxs[j] = uvsIdx; uvsIdx++; }
+#define RECORD_VERTEX_NORM(arg) { GetWrtDataPtr()->RecordVertNormal(arg); nrm.idxs[j] = nrmIdx; nrmIdx++; }
+#define RECORD_VERTEX_TANG(arg) { GetWrtDataPtr()->RecordVertTangent(arg); tan.idxs[j] = tanIdx; tanIdx++; }
+#define RECORD_VERTEX_BINORM(arg) { GetWrtDataPtr()->RecordVertBinormal(arg); bin.idxs[j] = binIdx; binIdx++; }
 
 
 
@@ -67,8 +67,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // Go through the root node extracting all pertinent info
+// If we find any poly data in this mesh, we will go ahead and iterate through all the
+// materials used by this mesh and record any used ones.  It may look a bit weird to
+// find ProcessMesh calling ProcessMaterials, but those two things are coupled together
+// and we only want to record materials we have mesh information for.
 ///////////////////////////////////////////////////////////////////////////////////////
-void ProcessMesh::Start(FbxNode* pNode, WriteData *pWrData)
+void ProcessMesh::Start(FbxNode* pNode, ProcessMaterials *pProcMat)
 {
     FbxMesh* lMesh = (FbxMesh*) pNode->GetNodeAttribute();
 	if(!lMesh)
@@ -77,10 +81,13 @@ void ProcessMesh::Start(FbxNode* pNode, WriteData *pWrData)
 	if(G_bVerbose)
 	    printf("\t\t\tMesh Name: %s\n", (char *) pNode->GetName());
 
-	m_pWriteData = pWrData;
-
 	// extract data out of mesh
-	ProcessPolygonInfo(lMesh);
+	if(ProcessPolygonInfo(lMesh))
+	{
+		////////////////////////////////////////////////////////////////////////////////////
+		// Found mesh with some poly data in it.  Record any materials associated with it
+		pProcMat->Start(lMesh);
+	}
 }
 
 
@@ -89,25 +96,27 @@ void ProcessMesh::Start(FbxNode* pNode, WriteData *pWrData)
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // Go through the Mesh node and break it down into vertices, normals, uv's, etc.
+// Return whether it managed to record any data off of this mesh
 ///////////////////////////////////////////////////////////////////////////////////////
-void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
+bool ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 {
 	bool nonTriangleFound = false;
+	bool recordedAny = false;
 
-
-
+	 
+	
 
 	//////////////////////////////////////////////////
 	// IMPORTANT: Keep track of component indices
 	// We have a running list of all raw data added for entire file (not just this mesh)
 	// These indices correspond in the order into the MeshData structure
 	// *** NOTE: at this point all component indices will match: vPos[0] refers to the same vertex as vNorm[0], vTex[0], etc.  This will change later in the process
-	int posIdx = GetDataPtr()->GetCurrVertCoordIndex();
-	int colIdx = GetDataPtr()->GetCurrVertColorIndex();
-	int uvsIdx = GetDataPtr()->GetCurrVertTexCoordIndex();
-	int nrmIdx = GetDataPtr()->GetCurrVertNormIndex();
-	int binIdx = GetDataPtr()->GetCurrVertBinormIndex();
-	int tanIdx = GetDataPtr()->GetCurrVertTangIndex();
+	int posIdx = GetWrtDataPtr()->GetCurrVertCoordIndex();
+	int colIdx = GetWrtDataPtr()->GetCurrVertColorIndex();
+	int uvsIdx = GetWrtDataPtr()->GetCurrVertTexCoordIndex();
+	int nrmIdx = GetWrtDataPtr()->GetCurrVertNormIndex();
+	int binIdx = GetWrtDataPtr()->GetCurrVertBinormIndex();
+	int tanIdx = GetWrtDataPtr()->GetCurrVertTangIndex();
 
 
 
@@ -116,18 +125,22 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 	Int3 pos, col, uvs, nrm, bin, tan;
 
 
-
-
+	
 	/////////////////////////////////////
 	// Fbx vertex index for current mesh
     int vertexId = 0;
+
+
 
 	//////////////////////////
 	// Iteration vars
 	// to help go through all mesh data in the fbx file
     int i, j, lPolygonCount = pMesh->GetPolygonCount();
-    FbxVector4* lControlPoints = pMesh->GetControlPoints(); 
+    FbxVector4* lControlPoints = pMesh->GetControlPoints();
     char header[100];
+
+
+
 
 	////////////////////////////////
 	// Iterate through polygon data
@@ -141,7 +154,6 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
         for (l = 0; l < pMesh->GetElementPolygonGroupCount(); l++)
         {
             FbxGeometryElementPolygonGroup* lePolgrp = pMesh->GetElementPolygonGroup(l);
-
 			//
 			switch (lePolgrp->GetMappingMode())
 			{
@@ -176,11 +188,9 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 
 
 
-
 		///////////////////////////////////////////
 		// FIND RAW DATA (verts, uv's, norms, etc)
 		///////////////////////////////////////////
-
         int lPolygonSize = pMesh->GetPolygonSize(i);
 		if(lPolygonSize != 3)
 		{
@@ -204,6 +214,7 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 			// VERTEX COORDINATES
 			///////////////////////////////////
 			RECORD_VERTEX_COORD(lControlPoints[lControlPointIndex]);
+			recordedAny = true; // yay, we found something!
 
 			if(G_bVerbose)
 				Display3DVector("\t\t\t\tCoordinates: ", lControlPoints[lControlPointIndex]);
@@ -561,13 +572,14 @@ void ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 
 		////////////////////////////////////////////////
 		// Add found indices
-		GetDataPtr()->AddCoordTriIdxs(&pos);
-		GetDataPtr()->AddColorTriIdxs(&col);
-		GetDataPtr()->AddTexCoordTriIdxs(&uvs);
-		GetDataPtr()->AddNormTriIdxs(&nrm);
-		GetDataPtr()->AddTangTriIdxs(&tan);
-		GetDataPtr()->AddBinormTriIdxs(&bin);
+		GetWrtDataPtr()->AddCoordTriIdxs(&pos);
+		GetWrtDataPtr()->AddColorTriIdxs(&col);
+		GetWrtDataPtr()->AddTexCoordTriIdxs(&uvs);
+		GetWrtDataPtr()->AddNormTriIdxs(&nrm);
+		GetWrtDataPtr()->AddTangTriIdxs(&tan);
+		GetWrtDataPtr()->AddBinormTriIdxs(&bin);
 
     } // for polygonCount
 
+	return recordedAny;
 }

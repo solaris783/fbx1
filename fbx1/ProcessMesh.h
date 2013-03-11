@@ -12,6 +12,8 @@
 // Project headers
 //
 #include "WriteData.h"
+#include "BaseProc.h"
+#include "ProcessMaterials.h"
 
 
 
@@ -23,17 +25,14 @@
 // not have to pass structures back and forth between
 // functions or declare messy globals
 ///////////////////////////////////////////////////////
-class ProcessMesh
+class ProcessMesh : public BaseProc
 {
 	public:
-		void Start(FbxNode *pNode, WriteData *pWrData);
+		ProcessMesh(WriteData *pWrtData) : BaseProc(pWrtData) {} // this constructor has a compulsory argument that gets propagated to the base class
+		void Start(FbxNode *pNode, ProcessMaterials *pProcMat);
 
 	private:
-		WriteData *m_pWriteData;
-		void ProcessPolygonInfo(FbxMesh* pMesh); // go through all polygon data and record it into the m_pWriteData structure
-
-		//
-		inline WriteData *GetDataPtr() { return m_pWriteData; }
+		bool ProcessPolygonInfo(FbxMesh* pMesh); // go through all polygon data and record it into the m_pWriteData structure
 };
 
 

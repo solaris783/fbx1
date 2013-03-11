@@ -83,15 +83,18 @@
     <ClCompile Include="..\Common\DisplayCommon.cxx" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ProcessContent.cpp" />
+    <ClCompile Include="ProcessMaterials.cpp" />
     <ClCompile Include="ProcessMesh.cpp" />
     <ClCompile Include="WriteData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\DisplayCommon.h" />
+    <ClInclude Include="BaseProc.h" />
     <ClInclude Include="DataTypes.h" />
     <ClInclude Include="fbxdefs.h" />
     <ClInclude Include="PerformanceCounter.h" />
     <ClInclude Include="ProcessContent.h" />
+    <ClInclude Include="ProcessMaterials.h" />
     <ClInclude Include="ProcessMesh.h" />
     <ClInclude Include="Weld.h" />
     <ClInclude Include="WriteData.h" />
