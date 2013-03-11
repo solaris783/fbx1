@@ -289,7 +289,7 @@ void ProcessMaterials::ExtractTextures(FbxSurfaceMaterial *pMaterial, int materi
 // I do it this way so that I only record textures used by materials which themselves are used by meshes
 // (i.e. avoid any unused data)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void ProcessMaterials::FindTextureInfoByProperty(FbxProperty pProperty, bool pDisplayHeader, int materialIndex)
+void ProcessMaterials::FindTextureInfoByProperty(FbxProperty pProperty, bool &pDisplayHeader, int materialIndex)
 {
     if( pProperty.IsValid() )
     {
@@ -304,14 +304,15 @@ void ProcessMaterials::FindTextureInfoByProperty(FbxProperty pProperty, bool pDi
                 DisplayInt("    Layered Texture: ", j);
                 FbxLayeredTexture *lLayeredTexture = pProperty.GetSrcObject<FbxLayeredTexture>(j);
                 int lNbTextures = lLayeredTexture->GetSrcObjectCount<FbxTexture>();
+
                 for(int k =0; k<lNbTextures; ++k)
                 {
                     FbxTexture* lTexture = lLayeredTexture->GetSrcObject<FbxTexture>(k);
                     if(lTexture)
                     {
-
-                        if(pDisplayHeader){                    
-                            DisplayInt("    Textures connected to Material ", pMaterialIndex);
+                        if(pDisplayHeader)
+						{                    
+                            DisplayInt("    Textures connected to Material ", materialIndex);
                             pDisplayHeader = false;
                         }
 
@@ -335,8 +336,9 @@ void ProcessMaterials::FindTextureInfoByProperty(FbxProperty pProperty, bool pDi
                 if(lTexture)
                 {
                     //display connected Material header only at the first time
-                    if(pDisplayHeader){                    
-                        DisplayInt("    Textures connected to Material ", pMaterialIndex);
+                    if(pDisplayHeader)
+					{
+                        DisplayInt("    Textures connected to Material ", materialIndex);
                         pDisplayHeader = false;
                     }             
 
@@ -346,7 +348,9 @@ void ProcessMaterials::FindTextureInfoByProperty(FbxProperty pProperty, bool pDi
                 }
             }
         }
+
     }//end if pProperty
+
 }
 
 

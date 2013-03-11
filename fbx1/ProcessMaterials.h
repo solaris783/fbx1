@@ -37,7 +37,7 @@ class ProcessMaterials : public BaseProc
 		bool IsMaterialRecorded(const char *pName);
 		void RecordMaterial(FbxSurfaceMaterial *pMaterial, int materialIndex);
 		void ExtractTextures(FbxSurfaceMaterial *pMaterial, int materialIndex);
-		void FindTextureInfoByProperty(FbxProperty lProperty, bool lDisplayHeader, int materialIndex);
+		void FindTextureInfoByProperty(FbxProperty lProperty, bool &lDisplayHeader, int materialIndex);
 		void RecordTextureInfo(FbxTexture *pTexture, int blendMode);
 };
 
