@@ -67,6 +67,10 @@ class WriteData
 		void AddTangTriIdxs(Int3 *pInt3) { m_fileData.meshData.tris.iTan.push_back( *pInt3 ); }
 		void AddBinormTriIdxs(Int3 *pInt3) { m_fileData.meshData.tris.iBin.push_back( *pInt3 ); }
 
+		////////////////////////////////////////////////
+		// For material, texture, light, etc data access
+		FileData *GetFileDataPtr() {return &m_fileData;}
+
 	private:
 		FileData m_fileData;
 		string m_outputFilename;
