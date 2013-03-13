@@ -205,7 +205,7 @@ bool ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 			// DANGER: 'continue' can screw you up unless you handle any unhandled cases at the end of this loop
 			continue;
 		}
-
+		
 		for (j = 0; j < lPolygonSize; j++)
 		{
 			int lControlPointIndex = pMesh->GetPolygonVertex(i, j);

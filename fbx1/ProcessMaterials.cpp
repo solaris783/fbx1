@@ -238,6 +238,9 @@ void ProcessMaterials::RecordMaterial(FbxSurfaceMaterial *pMaterial, int materia
 
 	////////////////////////////////////////////////////////
 	// Find texture(s) associated with this material
+	// Extracting textures happens here as opposed to its
+	// own module to cut on the amount of iterations
+	// necessary per file.
 	////////////////////////////////////////////////////////
 	ExtractTextures(pMaterial, materialIndex);
 
@@ -291,6 +294,9 @@ void ProcessMaterials::ExtractTextures(FbxSurfaceMaterial *pMaterial, int materi
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void ProcessMaterials::FindTextureInfoByProperty(FbxProperty pProperty, bool &pDisplayHeader, int materialIndex)
 {
+	TextureData texDat;
+	bool recordedData = false;
+
     if( pProperty.IsValid() )
     {
 		int lTextureCount = pProperty.GetSrcObjectCount<FbxTexture>();
@@ -301,7 +307,9 @@ void ProcessMaterials::FindTextureInfoByProperty(FbxProperty pProperty, bool &pD
 			FbxLayeredTexture *lLayeredTexture = pProperty.GetSrcObject<FbxLayeredTexture>(j);
 			if (lLayeredTexture)
 			{
-                DisplayInt("    Layered Texture: ", j);
+				texDat.isLayered = true;
+				if(G_bVerbose)
+	                DisplayInt("\t\t\t\t\tLayered Texture: ", j);
                 FbxLayeredTexture *lLayeredTexture = pProperty.GetSrcObject<FbxLayeredTexture>(j);
                 int lNbTextures = lLayeredTexture->GetSrcObjectCount<FbxTexture>();
 
@@ -311,8 +319,9 @@ void ProcessMaterials::FindTextureInfoByProperty(FbxProperty pProperty, bool &pD
                     if(lTexture)
                     {
                         if(pDisplayHeader)
-						{                    
-                            DisplayInt("    Textures connected to Material ", materialIndex);
+						{
+							if(G_bVerbose)
+	                            DisplayInt("\t\t\t\t\tTextures connected to Material ", materialIndex);
                             pDisplayHeader = false;
                         }
 
@@ -322,9 +331,23 @@ void ProcessMaterials::FindTextureInfoByProperty(FbxProperty pProperty, bool &pD
 
                         FbxLayeredTexture::EBlendMode lBlendMode;
                         lLayeredTexture->GetTextureBlendMode(k, lBlendMode);
-                        DisplayString("    Textures for ", pProperty.GetName());
-                        DisplayInt("        Texture ", k);  
-                        RecordTextureInfo(lTexture, (int) lBlendMode);   
+						if(G_bVerbose)
+						{
+	                        DisplayString("\t\t\t\t\tTextures for ", pProperty.GetName());
+		                    DisplayInt("\t\t\t\t\tTexture ", k);
+						}
+
+						// see if this texture already exists, if not, then record it
+						int texId = IsTextureAlreadyRecorded(lTexture);
+						if(texId >= 0)
+						{
+							GetFileDataPtr()->textures[texId].usedByMaterials.push_back(texId);
+						}
+						else
+						{
+	                        RecordTextureInfo(lTexture, (int) lBlendMode, &texDat);
+							recordedData = true;
+						}
                     }
 
                 }
@@ -338,20 +361,88 @@ void ProcessMaterials::FindTextureInfoByProperty(FbxProperty pProperty, bool &pD
                     //display connected Material header only at the first time
                     if(pDisplayHeader)
 					{
-                        DisplayInt("    Textures connected to Material ", materialIndex);
+						if(G_bVerbose)
+	                        DisplayInt("\t\t\t\t\tTextures connected to Material ", materialIndex);
                         pDisplayHeader = false;
-                    }             
+                    }
 
-                    DisplayString("    Textures for ", pProperty.GetName());
-                    DisplayInt("        Texture ", j);  
-                    RecordTextureInfo(lTexture, -1);
+                    DisplayString("\t\t\t\t\tTextures for ", pProperty.GetName());
+                    DisplayInt("\t\t\t\t\tTexture ", j);
+
+					// see if this texture already exists, if not, then record it
+					int texId = IsTextureAlreadyRecorded(lTexture);
+					if(texId >= 0)
+					{
+						GetFileDataPtr()->textures[texId].usedByMaterials.push_back(texId);
+					}
+					else
+					{
+	                    RecordTextureInfo(lTexture, -1, &texDat);
+						recordedData = true;
+					}
                 }
             }
         }
 
     }//end if pProperty
 
+
+
+	/////////////////////////////////////////////
+	// Record the texture data if we found it
+	if(recordedData)
+	{
+		GetFileDataPtr()->textures.push_back(texDat);
+	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Find out if this texture is already recorded.
+// If so, return the index of the texture in the m_fileDataPtr->textures list
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+int ProcessMaterials::IsTextureAlreadyRecorded(FbxTexture *pTexture)
+{
+	FbxFileTexture *lFileTexture = FbxCast<FbxFileTexture>(pTexture);
+	string name;
+
+	// The full path to the file is the best name to use to assure uniqueness.
+	// If full path name doesn't exist, use the Maya name of the texture.
+	if(lFileTexture)
+	{
+		name = lFileTexture->GetFileName();
+	}
+	else
+	{
+		name = pTexture->GetName();
+	}
+
+	int texIdx = 0;
+
+	// iterate through all textures
+	for (std::vector<TextureData>::iterator it = GetFileDataPtr()->textures.begin() ; it != GetFileDataPtr()->textures.end(); ++it)
+	{
+		if((*it).name == name)
+			return true;
+
+		texIdx++;
+	}
+
+	return -1;
+}
+
+
+
 
 
 
@@ -363,64 +454,125 @@ void ProcessMaterials::FindTextureInfoByProperty(FbxProperty pProperty, bool &pD
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Record the texture info we've found
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void ProcessMaterials::RecordTextureInfo(FbxTexture *pTexture, int blendMode)
+void ProcessMaterials::RecordTextureInfo(FbxTexture *pTexture, int blendMode, TextureData *pTexDat)
 {
 	FbxFileTexture *lFileTexture = FbxCast<FbxFileTexture>(pTexture);
 	FbxProceduralTexture *lProceduralTexture = FbxCast<FbxProceduralTexture>(pTexture);
 
-    DisplayString("            Name: \"", (char *) pTexture->GetName(), "\"");
+	if(G_bVerbose)
+	    DisplayString("\t\t\t\t\t\tName: \"", (char *) pTexture->GetName(), "\"");
+	pTexDat->name = pTexture->GetName();
+
 	if (lFileTexture)
 	{
-		DisplayString("            Type: File Texture");
-		DisplayString("            File Name: \"", (char *) lFileTexture->GetFileName(), "\"");
+		if(G_bVerbose)
+		{
+			DisplayString("\t\t\t\t\t\tType: File Texture");
+			DisplayString("\t\t\t\t\t\tFile Name: \"", (char *) lFileTexture->GetFileName(), "\"");
+		}
+		pTexDat->filename = lFileTexture->GetFileName();
 	}
 	else if (lProceduralTexture)
 	{
-		DisplayString("            Type: Procedural Texture");
+		if(G_bVerbose)
+		{
+			DisplayString("\t\t\t\t\t\tType: Procedural Texture");
+		}
+		pTexDat->isProcedural = true;
 	}
-    DisplayDouble("            Scale U: ", pTexture->GetScaleU());
-    DisplayDouble("            Scale V: ", pTexture->GetScaleV());
-    DisplayDouble("            Translation U: ", pTexture->GetTranslationU());
-    DisplayDouble("            Translation V: ", pTexture->GetTranslationV());
-    DisplayBool("            Swap UV: ", pTexture->GetSwapUV());
-    DisplayDouble("            Rotation U: ", pTexture->GetRotationU());
-    DisplayDouble("            Rotation V: ", pTexture->GetRotationV());
-    DisplayDouble("            Rotation W: ", pTexture->GetRotationW());
+
+	if(G_bVerbose)
+	{
+		DisplayDouble("\t\t\t\t\t\tScale U: ", pTexture->GetScaleU());
+		DisplayDouble("\t\t\t\t\t\tScale V: ", pTexture->GetScaleV());
+		DisplayDouble("\t\t\t\t\t\tTranslation U: ", pTexture->GetTranslationU());
+		DisplayDouble("\t\t\t\t\t\tTranslation V: ", pTexture->GetTranslationV());
+		DisplayBool("\t\t\t\t\t\tSwap UV: ", pTexture->GetSwapUV());
+		DisplayDouble("\t\t\t\t\t\tRotation U: ", pTexture->GetRotationU());
+		DisplayDouble("\t\t\t\t\t\tRotation V: ", pTexture->GetRotationV());
+		DisplayDouble("\t\t\t\t\t\tRotation W: ", pTexture->GetRotationW());
+	}
+
+	pTexDat->scaleU = (float) pTexture->GetScaleU();
+	pTexDat->scaleV = (float) pTexture->GetScaleV();
+
+	pTexDat->translateU = (float) pTexture->GetTranslationU();
+	pTexDat->translateV = (float) pTexture->GetTranslationV();
+
+	pTexDat->swapUV = pTexture->GetSwapUV();
+
+	pTexDat->rotateU = (float) pTexture->GetRotationU();
+	pTexDat->rotateV = (float) pTexture->GetRotationV();
+	pTexDat->rotateW = (float) pTexture->GetRotationW();
 
     const char* lAlphaSources[] = { "None", "RGB Intensity", "Black" };
 
-    DisplayString("            Alpha Source: ", lAlphaSources[pTexture->GetAlphaSource()]);
-    DisplayDouble("            Cropping Left: ", pTexture->GetCroppingLeft());
-    DisplayDouble("            Cropping Top: ", pTexture->GetCroppingTop());
-    DisplayDouble("            Cropping Right: ", pTexture->GetCroppingRight());
-    DisplayDouble("            Cropping Bottom: ", pTexture->GetCroppingBottom());
+	if(G_bVerbose)
+	{
+		DisplayString("\t\t\t\t\t\tAlpha Source: ", lAlphaSources[pTexture->GetAlphaSource()]);
+		DisplayDouble("\t\t\t\t\t\tCropping Left: ", pTexture->GetCroppingLeft());
+		DisplayDouble("\t\t\t\t\t\tCropping Top: ", pTexture->GetCroppingTop());
+		DisplayDouble("\t\t\t\t\t\tCropping Right: ", pTexture->GetCroppingRight());
+		DisplayDouble("\t\t\t\t\t\tCropping Bottom: ", pTexture->GetCroppingBottom());
+	}
+
+	pTexDat->alphaSource = (TexAlphaSource) pTexture->GetAlphaSource();
+
+	pTexDat->cropLeft = (float) pTexture->GetCroppingLeft();
+	pTexDat->cropRight = (float) pTexture->GetCroppingRight();
+	pTexDat->cropTop = (float) pTexture->GetCroppingTop();
+	pTexDat->cropBottom = (float) pTexture->GetCroppingBottom();
 
     const char* lMappingTypes[] = { "Null", "Planar", "Spherical", "Cylindrical", 
         "Box", "Face", "UV", "Environment" };
 
-    DisplayString("            Mapping Type: ", lMappingTypes[pTexture->GetMappingType()]);
+	if(G_bVerbose)
+	    DisplayString("\t\t\t\t\t\tMapping Type: ", lMappingTypes[pTexture->GetMappingType()]);
+
+	pTexDat->mappingType = (TexMappingType) pTexture->GetMappingType();
 
     if (pTexture->GetMappingType() == FbxTexture::ePlanar)
     {
         const char* lPlanarMappingNormals[] = { "X", "Y", "Z" };
 
-        DisplayString("            Planar Mapping Normal: ", lPlanarMappingNormals[pTexture->GetPlanarMappingNormal()]);
+		if(G_bVerbose)
+	        DisplayString("\t\t\t\t\t\tPlanar Mapping Normal: ", lPlanarMappingNormals[pTexture->GetPlanarMappingNormal()]);
+
+		pTexDat->planarNormals = (TexPlanarMappingNormals) pTexture->GetPlanarMappingNormal();
     }
 
     const char* lBlendModes[]   = { "Translucent", "Add", "Modulate", "Modulate2" };   
-    if(pBlendMode >= 0)
-        DisplayString("            Blend Mode: ", lBlendModes[pBlendMode]);
-    DisplayDouble("            Alpha: ", pTexture->GetDefaultAlpha());
+    if(blendMode >= 0)
+	{
+		if(G_bVerbose)
+	        DisplayString("\t\t\t\t\t\tBlend Mode: ", lBlendModes[blendMode]);
+
+		pTexDat->blendMode = (TexBlendModes) blendMode;
+	}
+
+	if(G_bVerbose)
+	    DisplayDouble("\t\t\t\t\t\tAlpha: ", pTexture->GetDefaultAlpha());
+
+	pTexDat->defaultAlpha = (float) pTexture->GetDefaultAlpha();
 
 	if (lFileTexture)
 	{
 		const char* lMaterialUses[] = { "Model Material", "Default Material" };
-	    DisplayString("            Material Use: ", lMaterialUses[lFileTexture->GetMaterialUse()]);
+		if(G_bVerbose)
+		    DisplayString("\t\t\t\t\t\tMaterial Use: ", lMaterialUses[lFileTexture->GetMaterialUse()]);
+
+		int material_index = GetFileDataPtr()->materials.size(); // this will be the index of the material currently being added
+		pTexDat->usedByMaterials.push_back(material_index);
 	}
 
     const char* pTextureUses[] = { "Standard", "Shadow Map", "Light Map", 
         "Spherical Reflexion Map", "Sphere Reflexion Map", "Bump Normal Map" };
 
-    DisplayString("            Texture Use: ", pTextureUses[pTexture->GetTextureUse()]);
-    DisplayString("");
+	if(G_bVerbose)
+	{
+	    DisplayString("\t\t\t\t\t\tTexture Use: ", pTextureUses[pTexture->GetTextureUse()]);
+		DisplayString("");
+	}
+
+	pTexDat->usedFor = (TexUsedFor) pTexture->GetTextureUse();
 }

@@ -93,6 +93,7 @@ struct TriList
 	vector<Int3> iCol;
 	vector<Int3> iBin;
 	vector<Int3> iTan;
+	vector<int>  iMat; // which material is used by this triangle
 };
 
 struct MeshData
@@ -176,8 +177,12 @@ struct TextureData
 	TexBlendModes blendMode;
 	TexUsedFor usedFor;
 
+	vector<int> usedByMaterials;
+	bool isProcedural;
+	bool isLayered;
 	bool usesDefaultMaterial;
 	bool swapUV;
+
 	float scaleU;
 	float scaleV;
 	float translateU;
@@ -190,7 +195,34 @@ struct TextureData
 	float cropRight;
 	float cropBottom;
 	float defaultAlpha;
+
+	///////////////////////////////////////////////////////////////
+	// MUST, MUST, MUST, MUST
+	// Initialize all members
+	TextureData() : alphaSource(TEX_ALPHA_SOURCE_NONE), 
+					mappingType(TEXMAPPING_TYPE_NULL),
+					planarNormals(TEX_PLANARMAPPING_NORMALS_X),
+					blendMode(TEX_BLENDMODES_TRANSLUCENT),
+					usedFor(TEXUSE_STANDARD),
+					isProcedural(false),
+					isLayered(false),
+					usesDefaultMaterial(false),
+					swapUV(false),
+					scaleU(0.0f),
+					scaleV(0.0f),
+					translateU(0.0f),
+					translateV(0.0f),
+					rotateU(0.0f),
+					rotateV(0.0f),
+					rotateW(0.0f),
+					cropLeft(0.0f),
+					cropTop(0.0f),
+					cropRight(0.0f),
+					cropBottom(0.0f),
+					defaultAlpha(0.0f) {}
 };
+
+
 
 struct MaterialData
 {
@@ -204,7 +236,21 @@ struct MaterialData
 	float shininess;
 	float reflectivity;
 	ShadingModel shadingModel;
+
+	///////////////////////////////////////////////////////////////
+	// MUST, MUST, MUST, MUST
+	// Initialize all members
+	MaterialData() : ambient(0.0f, 0.0f, 0.0f, 0.0f),
+						diffuse(0.0f, 0.0f, 0.0f, 0.0),
+						specular(0.0f, 0.0f, 0.0f, 0.0),
+						emissive(0.0f, 0.0f, 0.0f, 0.0),
+						opacity(0.0f),
+						shininess(0.0f),
+						reflectivity(0.0f),
+						shadingModel(SHADING_MODEL_LAMBERT) {}
 };
+
+
 
 struct FileData
 {

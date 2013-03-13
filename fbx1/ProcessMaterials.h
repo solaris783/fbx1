@@ -5,9 +5,9 @@
 // Therefore, if there are materials that don't exist in the poly data, they will not be found/recorded
 //
 
-
-#ifndef __PROCESS_MATERIALS__H
-#define __PROCESS_MATERIALS__H
+#pragma once
+//#ifndef __PROCESS_MATERIALS__H
+//#define __PROCESS_MATERIALS__H
 
 
 
@@ -38,9 +38,10 @@ class ProcessMaterials : public BaseProc
 		void RecordMaterial(FbxSurfaceMaterial *pMaterial, int materialIndex);
 		void ExtractTextures(FbxSurfaceMaterial *pMaterial, int materialIndex);
 		void FindTextureInfoByProperty(FbxProperty lProperty, bool &lDisplayHeader, int materialIndex);
-		void RecordTextureInfo(FbxTexture *pTexture, int blendMode);
+		void RecordTextureInfo(FbxTexture *pTexture, int blendMode, TextureData *pTexDat);
+		int  IsTextureAlreadyRecorded(FbxTexture *pTexture);
 };
 
 
 
-#endif
+//#endif
