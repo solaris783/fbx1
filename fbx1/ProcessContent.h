@@ -42,6 +42,7 @@ class ProcessContent
 
 		// ProcessContent-specific functions
 		void RecurThroughChildren(FbxNode* pNode);
+		void ProcessGlobalData(FbxGlobalSettings* pGlobalSettings);
 };
 
 

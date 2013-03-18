@@ -303,6 +303,11 @@ struct LightData
 	float fog;
 };
 
+struct GlobalData
+{
+	ColorRGBA ambient;
+};
+
 
 
 struct FileData
@@ -312,6 +317,7 @@ struct FileData
 	vector<MaterialData> materials;
 	vector<TextureData> textures;
 	vector<LightData> lights;
+	GlobalData globals;
 };
 
 
