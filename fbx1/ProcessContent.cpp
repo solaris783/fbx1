@@ -21,7 +21,7 @@
 // CONSTRUCTOR
 // This class has a member variables (for example, m_procMesh) with a compulsory initialization parameter (WriteData)
 ///////////////////////////////////////////////////////////////////////////////////////
-ProcessContent::ProcessContent(string in_filename) : m_procMesh(&m_writeData), m_procMat(&m_writeData)
+ProcessContent::ProcessContent(string in_filename) : m_procMesh(&m_writeData), m_procMat(&m_writeData), m_procLight(&m_writeData)
 {
 	m_filename = in_filename;
 	m_writeData.SetFilename(m_filename);

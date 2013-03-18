@@ -83,6 +83,7 @@
     <ClCompile Include="..\Common\DisplayCommon.cxx" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ProcessContent.cpp" />
+    <ClCompile Include="ProcessLights.cpp" />
     <ClCompile Include="ProcessMaterials.cpp" />
     <ClCompile Include="ProcessMesh.cpp" />
     <ClCompile Include="WriteData.cpp" />
@@ -94,6 +95,7 @@
     <ClInclude Include="fbxdefs.h" />
     <ClInclude Include="PerformanceCounter.h" />
     <ClInclude Include="ProcessContent.h" />
+    <ClInclude Include="ProcessLights.h" />
     <ClInclude Include="ProcessMaterials.h" />
     <ClInclude Include="ProcessMesh.h" />
     <ClInclude Include="Weld.h" />
