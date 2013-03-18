@@ -46,34 +46,38 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Check to see if this material is already recorded
+// returns the index of the material if it does, -1 if it doesn't
 ////////////////////////////////////////////////////////////////////////////////////////
-bool ProcessMaterials::IsMaterialRecorded(const char *pName)
+int ProcessMaterials::IsMaterialRecorded(const char *pName)
 {
 	string name(pName);
+	int index = 0;
 
 	// iterate through all materials
 	for (std::vector<MaterialData>::iterator it = GetFileDataPtr()->materials.begin() ; it != GetFileDataPtr()->materials.end(); ++it)
 	{
 		if((*it).name == name)
-			return true;
+			return index;
+		index++;
 	}
 
-	return false;
+	return -1;
 }
 
 
 
 
 
-//////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
 // RECORD MATERIAL ENTRY FUNCTION
 // Each mesh has a list of materials associated with it (one for each 'part' of the mesh)
 // Every mesh has at least one 'part'/material (there's a corresponding 'part' per material.
 // Every material is checked to see if we've already recorded it.  This is simply done
 // by checking the material's name, so if there are two materials with the same name, we're
 // screwed.
-//////////////////////////////////////////////////////////////////////////////////////////////
-void ProcessMaterials::Start(FbxMesh *pMesh)
+// A list that crossreferences the Fbx list of materials to my global list of materials is made
+//////////////////////////////////////////////////////////////////////////////////////////////////
+void ProcessMaterials::Start(FbxMesh *pMesh, MaterialMeshXref &matXref)
 {
 	int materialCnt = pMesh->GetNode()->GetMaterialCount();
 
@@ -82,13 +86,21 @@ void ProcessMaterials::Start(FbxMesh *pMesh)
 		FbxSurfaceMaterial *pMaterial = pMesh->GetNode()->GetMaterial(i);
 
 		// Have I already processed this material?
-		if(IsMaterialRecorded(pMaterial->GetName()))
+		int matIdx = IsMaterialRecorded(pMaterial->GetName());
+		if(matIdx >= 0)
+		{
+			matXref.newIndices.push_back(matIdx);
 			continue; // WARNING!!! For this 'continue' to be safe, make sure nothing important gets done at the end of this loop
+		}
 
 	  	if(G_bVerbose)
 		    printf("\t\t\tMaterial Name: %s\n", (char *) pMaterial->GetName());
 
-		RecordMaterial(pMaterial, i);
+		// if a valid material, record it's xref index
+		matIdx = RecordMaterial(pMaterial, i);
+
+		// record what index this material ended up in (-1 if invalid)
+		matXref.newIndices.push_back(matIdx);
 	}
 }
 
@@ -98,8 +110,9 @@ void ProcessMaterials::Start(FbxMesh *pMesh)
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // RECORD MATERIAL
+// returns the index of the newly added material, -1 if invalid
 ////////////////////////////////////////////////////////////////////////////////////////
-void ProcessMaterials::RecordMaterial(FbxSurfaceMaterial *pMaterial, int materialIndex)
+int ProcessMaterials::RecordMaterial(FbxSurfaceMaterial *pMaterial, int materialIndex)
 {
 	MaterialData matDat; // this is the structure we're going to record in
 	bool recordedData = false; // only record this material if we found valid data in it
@@ -236,6 +249,11 @@ void ProcessMaterials::RecordMaterial(FbxSurfaceMaterial *pMaterial, int materia
 
 
 
+	// didn't find a valid material
+	if(!recordedData)
+		return -1;
+
+
 	////////////////////////////////////////////////////////
 	// Find texture(s) associated with this material
 	// Extracting textures happens here as opposed to its
@@ -244,13 +262,10 @@ void ProcessMaterials::RecordMaterial(FbxSurfaceMaterial *pMaterial, int materia
 	////////////////////////////////////////////////////////
 	ExtractTextures(pMaterial, materialIndex);
 
-
-
 	// DONE
-	if(recordedData)
-	{
-		GetFileDataPtr()->materials.push_back(matDat);
-	}
+	GetFileDataPtr()->materials.push_back(matDat);
+
+	return (GetFileDataPtr()->materials.size()-1);
 }
 
 

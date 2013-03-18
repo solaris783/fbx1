@@ -81,14 +81,17 @@ void ProcessMesh::Start(FbxNode* pNode, ProcessMaterials *pProcMat)
 	if(G_bVerbose)
 	    printf("\t\t\tMesh Name: %s\n", (char *) pNode->GetName());
 
-	// extract data out of mesh
-	if(ProcessPolygonInfo(lMesh))
-	{
-		////////////////////////////////////////////////////////////////////////////////////
-		// Found mesh with some poly data in it.  Record any materials associated with it
-		pProcMat->Start(lMesh);
-	}
+	MaterialMeshXref matXref;
+
+	// Fist make a list of all the materials this mesh uses and record them in my global list of materials
+	pProcMat->Start(lMesh, matXref);
+
+	// extract data out of mesh.  Mark materials used by any valid polygons.
+	ProcessPolygonInfo(lMesh, matXref);
 }
+
+
+
 
 
 
@@ -98,7 +101,7 @@ void ProcessMesh::Start(FbxNode* pNode, ProcessMaterials *pProcMat)
 // Go through the Mesh node and break it down into vertices, normals, uv's, etc.
 // Return whether it managed to record any data off of this mesh
 ///////////////////////////////////////////////////////////////////////////////////////
-bool ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
+bool ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh, MaterialMeshXref &matXref)
 {
 	bool nonTriangleFound = false;
 	bool recordedAny = false;
@@ -151,7 +154,9 @@ bool ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 		//////////////////////////
 		// FIND GROUP ASSIGNMENTS
 		//////////////////////////
-        for (l = 0; l < pMesh->GetElementPolygonGroupCount(); l++)
+		int polyGroupCount = pMesh->GetElementPolygonGroupCount();
+
+        for (l = 0; l < polyGroupCount; l++)
         {
             FbxGeometryElementPolygonGroup* lePolgrp = pMesh->GetElementPolygonGroup(l);
 			//
@@ -205,7 +210,7 @@ bool ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 			// DANGER: 'continue' can screw you up unless you handle any unhandled cases at the end of this loop
 			continue;
 		}
-		
+
 		for (j = 0; j < lPolygonSize; j++)
 		{
 			int lControlPointIndex = pMesh->GetPolygonVertex(i, j);
@@ -570,14 +575,62 @@ bool ProcessMesh::ProcessPolygonInfo(FbxMesh* pMesh)
 
 		} // for polygonSize
 
+
+
+
+
+
+
+
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// MATERIAL INDEX
+		// Find material index (the fbx per-mesh index) for this poly
+		// Later we'll fix this list to reflect the indices into my global list of materials
+		// Determine which mesh part this vertex index should be added to based on the material that affects it.
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		MatList matList;
+		int meshPartIndex = -1;
+		int myMatIndex = 0;
+		const int elementMaterialCount = pMesh->GetElementMaterialCount();
+
+		// Should find a better way to do this, not every vertex :/
+		if(elementMaterialCount == 0)
+		{
+			// one material for the entire mesh, easy
+			FbxGeometryElementMaterial* elementMaterial = pMesh->GetElementMaterial(0);
+
+			FbxSurfaceMaterial* fbxMaterial = pMesh->GetNode()->GetMaterial(elementMaterial->GetIndexArray().GetAt(0));    
+			meshPartIndex = elementMaterial->GetIndexArray().GetAt(0);
+			myMatIndex = matXref.newIndices[meshPartIndex]; // find the mesh material in my global list of materials for the whole file and record it
+			GetWrtDataPtr()->SetMaterialAsUsed(myMatIndex); // I keep track of used materials so I can get rid of non-used ones
+			matList.list.push_back(myMatIndex);
+		}
+		else 
+		{
+			// we have multiple materials for the mesh
+			for (int k = 0; k < elementMaterialCount; ++k)
+			{
+				FbxGeometryElementMaterial* elementMaterial = pMesh->GetElementMaterial(k);
+				meshPartIndex = elementMaterial->GetIndexArray().GetAt(i);
+				myMatIndex = matXref.newIndices[meshPartIndex]; // find the mesh material in my global list of materials for the whole file and record it
+				GetWrtDataPtr()->SetMaterialAsUsed(myMatIndex); // I keep track of used materials so I can get rid of non-used ones
+				matList.list.push_back(myMatIndex);
+			}
+		}
+
+
+
 		////////////////////////////////////////////////
-		// Add found indices
-		GetWrtDataPtr()->AddCoordTriIdxs(&pos);
-		GetWrtDataPtr()->AddColorTriIdxs(&col);
-		GetWrtDataPtr()->AddTexCoordTriIdxs(&uvs);
-		GetWrtDataPtr()->AddNormTriIdxs(&nrm);
-		GetWrtDataPtr()->AddTangTriIdxs(&tan);
-		GetWrtDataPtr()->AddBinormTriIdxs(&bin);
+		// Add found polygon indices
+		GetWrtDataPtr()->AddCoordTriIdxs(pos);
+		GetWrtDataPtr()->AddColorTriIdxs(col);
+		GetWrtDataPtr()->AddTexCoordTriIdxs(uvs);
+		GetWrtDataPtr()->AddNormTriIdxs(nrm);
+		GetWrtDataPtr()->AddTangTriIdxs(tan);
+		GetWrtDataPtr()->AddBinormTriIdxs(bin);
+		GetWrtDataPtr()->AddMaterialIdx(matList);
+
+
 
     } // for polygonCount
 

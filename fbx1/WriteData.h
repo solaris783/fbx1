@@ -60,16 +60,21 @@ class WriteData
 
 		///////////////////////////////////////////////
 		// Functions for adding new tringle indices
-		void AddCoordTriIdxs(Int3 *pInt3) { m_fileData.meshData.tris.iPos.push_back( *pInt3 ); }
-		void AddColorTriIdxs(Int3 *pInt3) { m_fileData.meshData.tris.iCol.push_back( *pInt3 ); }
-		void AddTexCoordTriIdxs(Int3 *pInt3) { m_fileData.meshData.tris.iTex.push_back( *pInt3 ); }
-		void AddNormTriIdxs(Int3 *pInt3) { m_fileData.meshData.tris.iNrm.push_back( *pInt3 ); }
-		void AddTangTriIdxs(Int3 *pInt3) { m_fileData.meshData.tris.iTan.push_back( *pInt3 ); }
-		void AddBinormTriIdxs(Int3 *pInt3) { m_fileData.meshData.tris.iBin.push_back( *pInt3 ); }
+		void AddCoordTriIdxs(Int3 & arg) { m_fileData.meshData.tris.iPos.push_back( arg ); }
+		void AddColorTriIdxs(Int3 & arg) { m_fileData.meshData.tris.iCol.push_back( arg ); }
+		void AddTexCoordTriIdxs(Int3 & arg) { m_fileData.meshData.tris.iTex.push_back( arg ); }
+		void AddNormTriIdxs(Int3 & arg) { m_fileData.meshData.tris.iNrm.push_back( arg ); }
+		void AddTangTriIdxs(Int3 & arg) { m_fileData.meshData.tris.iTan.push_back( arg ); }
+		void AddBinormTriIdxs(Int3 & arg) { m_fileData.meshData.tris.iBin.push_back( arg ); }
+		void AddMaterialIdx(MatList & arg) { m_fileData.meshData.tris.iMat.push_back( arg ); }
 
 		////////////////////////////////////////////////
 		// For material, texture, light, etc data access
 		FileData *GetFileDataPtr() {return &m_fileData;}
+
+		///////////////////////////////////////////////
+		// Flag setting
+		void SetMaterialAsUsed(int materialIndex);
 
 	private:
 		FileData m_fileData;

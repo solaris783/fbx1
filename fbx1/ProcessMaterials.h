@@ -31,11 +31,11 @@ class ProcessMaterials : public BaseProc
 {
 	public:
 		ProcessMaterials(WriteData *pWrtData) : BaseProc(pWrtData) {} // this constructor has a compulsory argument that gets propagated to the base class
-		void Start(FbxMesh* pMesh);
+		void Start(FbxMesh* pMesh, MaterialMeshXref &matXref);
 
 	private:
-		bool IsMaterialRecorded(const char *pName);
-		void RecordMaterial(FbxSurfaceMaterial *pMaterial, int materialIndex);
+		int  IsMaterialRecorded(const char *pName);
+		int  RecordMaterial(FbxSurfaceMaterial *pMaterial, int materialIndex);
 		void ExtractTextures(FbxSurfaceMaterial *pMaterial, int materialIndex);
 		void FindTextureInfoByProperty(FbxProperty lProperty, bool &lDisplayHeader, int materialIndex);
 		void RecordTextureInfo(FbxTexture *pTexture, int blendMode, TextureData *pTexDat);

@@ -20,12 +20,12 @@ void DisplayMetaDataConnections(FbxObject* pObject)
 {
 	int nbMetaData = pObject->GetSrcObjectCount<FbxObjectMetaData>();
     if (nbMetaData > 0)
-        DisplayString("    MetaData connections ");
+        DisplayString("\t\t\t\tMetaData connections ");
 
     for (int i = 0; i < nbMetaData; i++)
     {
         FbxObjectMetaData* metaData = pObject->GetSrcObject<FbxObjectMetaData>(i);
-        DisplayString("        Name: ", (char*)metaData->GetName());
+        DisplayString("\t\t\t\t\tName: ", (char*)metaData->GetName());
     }
 }
 

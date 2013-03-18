@@ -313,3 +313,27 @@ void WriteData::WeldData()
 		pIndices->iBin.clear();
 	}
 }
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// Set a material as used, check for edge cases
+///////////////////////////////////////////////////////////////////////////////////////////
+void WriteData::SetMaterialAsUsed(int materialIndex)
+{
+	// this is not a fatal error. -1 means the poly doesn't use a material
+	if(materialIndex < 0)
+		return;
+
+	// ensure we're in-bounds.  Trace why is there a request for a out-of-bounds index if this asserts
+	//
+	if( materialIndex >= (int) m_fileData.materials.size() ) // the case should be safe - we already know size > 0, and these are not going to be huge numbers
+	{
+		assert( 1 );
+		return;
+	}
+
+	m_fileData.materials[materialIndex].used = true;
+}

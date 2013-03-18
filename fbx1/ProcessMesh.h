@@ -32,7 +32,7 @@ class ProcessMesh : public BaseProc
 		void Start(FbxNode *pNode, ProcessMaterials *pProcMat);
 
 	private:
-		bool ProcessPolygonInfo(FbxMesh* pMesh); // go through all polygon data and record it into the m_pWriteData structure
+		bool ProcessPolygonInfo(FbxMesh* pMesh, MaterialMeshXref &matXref); // go through all polygon data and record it into the m_pWriteData structure. Mark any materials used in my global list of materials
 };
 
 

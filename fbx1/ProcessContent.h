@@ -14,6 +14,8 @@
 #include "WriteData.h"
 #include "ProcessMesh.h"
 #include "ProcessMaterials.h"
+#include "ProcessLights.h"
+
 
 
 
@@ -36,6 +38,7 @@ class ProcessContent
 		WriteData m_writeData;
 		ProcessMesh m_procMesh;
 		ProcessMaterials m_procMat;
+		ProcessLights m_procLight;
 
 		// ProcessContent-specific functions
 		void RecurThroughChildren(FbxNode* pNode);

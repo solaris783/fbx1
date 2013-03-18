@@ -83,6 +83,12 @@ struct UsingFields
 	unsigned vtexCoord : 1;
 };
 
+// for holding the list of materials each tri will hold
+struct MatList
+{
+	vector<int> list;
+};
+
 // indices into the triangle components.  These correspond 1:1 so that iPos[0] corresponds to iNrm[0], iTex[0], etc.  Done this way for caching performance.
 // For example, iPos[0].idxs[0-2] where [0-2] represent the 3 indices into that component's list (i.e. vPos)
 struct TriList
@@ -93,7 +99,7 @@ struct TriList
 	vector<Int3> iCol;
 	vector<Int3> iBin;
 	vector<Int3> iTan;
-	vector<int>  iMat; // which material is used by this triangle
+	vector<MatList>  iMat; // which material is used by this triangle
 };
 
 struct MeshData
@@ -226,6 +232,7 @@ struct TextureData
 
 struct MaterialData
 {
+	bool used; // whether this material is referenced by any poly or not
 	string name;
 	vector<int> textureIdx; // index of the texture(s) in the texture list that this material uses. A single material can have multiple textures associated with it.
 	ColorRGBA ambient;
@@ -247,7 +254,53 @@ struct MaterialData
 						opacity(0.0f),
 						shininess(0.0f),
 						reflectivity(0.0f),
+						used(false),
 						shadingModel(SHADING_MODEL_LAMBERT) {}
+};
+
+
+//////////////////////////////////////////////////////////////////////
+// This will hold a list of materials for a mesh
+// The indices in the vector correspond to the mesh material index
+// i.e. MaterialMeshXref[0] ==  pMesh->GetNode()->GetMaterial(0)
+// The value in stored in the vector corresponds to the the index in
+// my list of materials.
+///////////////////////////////////////////////////////////////////////
+struct MaterialMeshXref
+{
+	vector<int> newIndices;
+};
+
+
+
+enum LightTypes
+{
+	LIGHT_TYPE_POINT,
+	LIGHT_TYPE_DIRECTIONAL,
+	LIGHT_TYPE_SPOT
+};
+
+
+struct GoboData
+{
+	string filename;
+	bool doesProjectToGround;
+	bool isVolumetricProjection;
+	bool isFrontVolumetricProjection;
+};
+
+
+struct LightData
+{
+	string name;
+	LightTypes type;
+	bool isCastLight;
+	bool isGobo;
+	GoboData gobo;
+	ColorRGBA color;
+	float intensity;
+	float outerAngle;
+	float fog;
 };
 
 
@@ -258,6 +311,7 @@ struct FileData
 	MeshData meshData;
 	vector<MaterialData> materials;
 	vector<TextureData> textures;
+	vector<LightData> lights;
 };
 
 

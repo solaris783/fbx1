@@ -74,12 +74,19 @@ void ProcessContent::RecurThroughChildren(FbxNode* pNode)
 
         switch (lAttributeType)
         {
-			//_________________________________________________________
+			//____________ MESHES + MATERIALS + TEXTURES _____________________________________________
 			case FbxNodeAttribute::eMesh:
 			{
 				m_procMesh.Start(pNode, &m_procMat);
 				
 				break;
+			}
+
+			//_____________ LIGHTS ____________________________________________________________________
+	       case FbxNodeAttribute::eLight:
+			{
+				m_procLight.Start(pNode);
+		        break;
 			}
 
 		} // end of switch(lAttributeType)
