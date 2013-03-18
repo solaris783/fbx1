@@ -13,6 +13,7 @@
 #include "WriteData.h"
 #include "ProcessContent.h"
 #include "Weld.h"
+#include "DisplayCommon.h"
 
 
 
@@ -38,6 +39,16 @@ void ProcessContent::Start(FbxScene* pScene)
     int i;
     FbxNode* lNode = pScene->GetRootNode();
 
+	
+	
+	//////////////////////////////////////////////////////////////
+	// GRAB GLOBAL INFO FIRST
+	ProcessGlobalData(&pScene->GetGlobalSettings());
+
+
+
+	//////////////////////////////////////////////////////////////
+	// NOW RECUR THROUGH TREE
     if(lNode)
     {
         for(i = 0; i < lNode->GetChildCount(); i++)
@@ -45,6 +56,7 @@ void ProcessContent::Start(FbxScene* pScene)
             RecurThroughChildren(lNode->GetChild(i));
         }
     }
+
 
 	// Weld all components that can be matched and fix indices into triangle list
 	m_writeData.WeldData();
@@ -96,4 +108,21 @@ void ProcessContent::RecurThroughChildren(FbxNode* pNode)
     {
         RecurThroughChildren(pNode->GetChild(i));
     }
+}
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+// Load pertinent data stored in the fbx global data area
+///////////////////////////////////////////////////////////////////////////////////////
+void ProcessContent::ProcessGlobalData(FbxGlobalSettings* pGlobalSettings)
+{
+	if(G_bVerbose)
+	    DisplayColor("\t\t\tAmbient Color: ", pGlobalSettings->GetAmbientColor());
+	
+	FbxColor value = pGlobalSettings->GetAmbientColor();
+	ColorRGBA color((float) value.mRed, (float) value.mGreen, (float) value.mBlue, 1.0f);
+
+	m_writeData.GetFileDataPtr()->globals.ambient = color;
 }
