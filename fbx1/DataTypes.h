@@ -188,6 +188,7 @@ struct TextureData
 	bool isLayered;
 	bool usesDefaultMaterial;
 	bool swapUV;
+	bool used;
 
 	float scaleU;
 	float scaleV;
@@ -214,6 +215,7 @@ struct TextureData
 					isLayered(false),
 					usesDefaultMaterial(false),
 					swapUV(false),
+					used(false),
 					scaleU(0.0f),
 					scaleV(0.0f),
 					translateU(0.0f),
@@ -338,6 +340,16 @@ struct FileData
 inline float IN_CutPrecision(float in, float max_precision = MAX_PRECISION_POS)
 {
 	return (floor(in * max_precision) / max_precision);
+}
+
+
+//
+// TEMPLATES
+//
+template <typename T>
+void RemoveStdVectorIndex(std::vector<T>& vec, size_t index)
+{
+	vec.erase(vec.begin() + index);
 }
 
 

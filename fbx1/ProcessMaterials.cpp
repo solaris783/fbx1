@@ -591,3 +591,53 @@ void ProcessMaterials::RecordTextureInfo(FbxTexture *pTexture, int blendMode, Te
 
 	pTexDat->usedFor = (TexUsedFor) pTexture->GetTextureUse();
 }
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Remove unused materials and textures
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void ProcessMaterials::DeleteUnused()
+{
+	int size = (int) GetFileDataPtr()->materials.size();
+	int i = 0;
+
+	while(i < size)
+	{
+		if(GetFileDataPtr()->materials[i].used == false)
+		{
+			RemoveStdVectorIndex(GetFileDataPtr()->materials, i);
+			size--;
+		}
+		else
+		{
+			MaterialData *pMatPtr = &GetFileDataPtr()->materials[i];
+
+			// flag textures referenced by this material as used
+			for(unsigned int j=0; j < pMatPtr->textureIdx.size(); j++)
+			{
+				int texIndex = pMatPtr->textureIdx[j];
+				GetFileDataPtr()->textures[j].used = true;
+			}
+
+			i++;
+		}
+	}
+
+	// Remove unused textures
+	i = 0;
+	size = (int) GetFileDataPtr()->textures.size();
+
+	while(i < size)
+	{
+		if(GetFileDataPtr()->textures[i].used == false)
+		{
+			RemoveStdVectorIndex(GetFileDataPtr()->textures, i);
+			size--;
+		}
+		else
+		{
+			i++;
+		}
+	}
+}

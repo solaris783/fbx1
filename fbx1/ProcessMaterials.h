@@ -32,6 +32,7 @@ class ProcessMaterials : public BaseProc
 	public:
 		ProcessMaterials(WriteData *pWrtData) : BaseProc(pWrtData) {} // this constructor has a compulsory argument that gets propagated to the base class
 		void Start(FbxMesh* pMesh, MaterialMeshXref &matXref);
+		void DeleteUnused();
 
 	private:
 		int  IsMaterialRecorded(const char *pName);

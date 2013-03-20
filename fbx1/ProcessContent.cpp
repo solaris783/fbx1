@@ -60,6 +60,9 @@ void ProcessContent::Start(FbxScene* pScene)
 
 	// Weld all components that can be matched and fix indices into triangle list
 	m_writeData.WeldData();
+
+	// Get rid of unused materials
+	m_procMat.DeleteUnused();
 }
 
 
